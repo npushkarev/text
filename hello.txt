@@ -1,8 +1,13 @@
-Hello, world!
-cmake -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchains/linux_x86_64.cmake \                                                                                             
-        -DCMAKE_BUILD_TYPE=Release \
-        -DBUILD_SHARED_LIBS=ON \                                                                                                                                       
-        ../.. 2>&1 | tee /tmp/grpc_sdk_configure.log                                                                                                                 
-                                                                                                                                                                       
-  # Кинь сюда последние ~30-50 строк лога:                                                                                                                           
+ cat > /tmp/configure_grpc_sdk.sh <<'EOF'                                                                                                                             
+  #!/bin/bash                                                                                                                                                        
+  set -euo pipefail                                                                                                                                                    
+  cd ~/grpc_sdk/.build/lin.gcc.shared.x64
+  cmake \                                                                                                                                                              
+      -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchains/linux_x86_64.cmake \                                                                                             
+      -DCMAKE_BUILD_TYPE=Release \                                                                                                                                     
+      -DBUILD_SHARED_LIBS=ON \                                                                                                                                         
+      ../.. 2>&1 | tee /tmp/grpc_sdk_configure.log                                                                                                                     
+  EOF                                                                                                                                                                  
+  chmod +x /tmp/configure_grpc_sdk.sh                                                                                                                                
+  /tmp/configure_grpc_sdk.sh                                                                                                                             
   tail -50 /tmp/grpc_sdk_configure.log
