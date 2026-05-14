@@ -15,4 +15,35 @@
 
 PROFILE=$(pwd)/profiles/lin-gcc84-x86_64 \                                                                                                                           
   PROFILE_BUILD=$(pwd)/profiles/lin-gcc84-x86_64 \                                                                                                                     
-  bash test-astra/run_test_grpc.sh 2>&1 | tee /tmp/grpc-x86_64-build.log     
+  bash test-astra/run_test_grpc.sh 2>&1 | tee /tmp/grpc-x86_64-build.log   
+
+
+cat > /tmp/build_x86_64.sh <<'EOF'
+  #!/bin/bash                                                                                                                                                          
+  set -euo pipefail                                                                                                                                                  
+  cd ~/conan-master                                                                                                                                                    
+                                                                                                                                                                       
+  echo "=== Шаг 1: docker build ==="
+  sudo docker build \                                                                                                                                                  
+      --build-arg X64_BASE_IMAGE=proget.inc.elara.local/main/library/gcc84-build-x86_64:0.1.0 \                                                                      
+      --build-arg BASE_IMAGE=proget.inc.elara.local/main/library/gcc84-build-x86_64:0.1.0 \                                                                            
+      -f Dockerfile.grpc-tc-mirror \                                                                                                                                   
+      -t grpc-tc-mirror-x86_64-local:0.1.0 \                                                                                                                           
+      .                                                                                                                                                                
+                                                                                                                                                                     
+  echo "=== Шаг 2: docker run grpc build ==="                                                                                                                          
+  mkdir -p output-x86_64-test                                                                                                                                        
+  sudo docker run --rm \
+      -v "$(pwd)":/work/conan-recipes \
+      -v "$(pwd)/output-x86_64-test":/work/conan-recipes/output \                                                                                                      
+      -v conan-cache-x86_64-test:/root/.conan2 \
+      -e PROFILE=/work/conan-recipes/profiles/lin-gcc84-x86_64 \                                                                                                       
+      -e PROFILE_BUILD=/work/conan-recipes/profiles/lin-gcc84-x86_64 \                                                                                               
+      grpc-tc-mirror-x86_64-local:0.1.0 \                                                                                                                              
+      bash /work/conan-recipes/test-astra/run_test_grpc.sh 2>&1 | tee /tmp/grpc-x86_64-build.log                                                                     
+                                                                                                                                                                       
+  echo "=== Done. Output: ==="                                                                                                                                         
+  ls -lh ~/conan-master/output-x86_64-test/*.nupkg                                                                                                                     
+  EOF                                                                                                                                                                  
+  chmod +x /tmp/build_x86_64.sh                                                                                                                                        
+  /tmp/build_x86_64.sh
