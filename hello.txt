@@ -1,1 +1,8 @@
 Hello, world!
+cmake -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchains/linux_x86_64.cmake \                                                                                             
+        -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_SHARED_LIBS=ON \                                                                                                                                       
+        ../.. 2>&1 | tee /tmp/grpc_sdk_configure.log                                                                                                                 
+                                                                                                                                                                       
+  # Кинь сюда последние ~30-50 строк лога:                                                                                                                           
+  tail -50 /tmp/grpc_sdk_configure.log
