@@ -11,3 +11,8 @@
   chmod +x /tmp/configure_grpc_sdk.sh                                                                                                                                
   /tmp/configure_grpc_sdk.sh                                                                                                                             
   tail -50 /tmp/grpc_sdk_configure.log
+
+
+PROFILE=$(pwd)/profiles/lin-gcc84-x86_64 \                                                                                                                           
+  PROFILE_BUILD=$(pwd)/profiles/lin-gcc84-x86_64 \                                                                                                                     
+  bash test-astra/run_test_grpc.sh 2>&1 | tee /tmp/grpc-x86_64-build.log     
