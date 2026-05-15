@@ -1,4 +1,7 @@
- cat > /tmp/configure_grpc_sdk.sh <<'EOF'                                                                                                                             
+cmake -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchains/linux_x86_64.cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON ../.. 2>&1 | tee                            
+  /tmp/grpc_sdk_configure_v2.log 
+
+cat > /tmp/configure_grpc_sdk.sh <<'EOF'                                                                                                                             
   #!/bin/bash                                                                                                                                                        
   set -euo pipefail                                                                                                                                                    
   cd ~/grpc_sdk/.build/lin.gcc.shared.x64
