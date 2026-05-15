@@ -1,3 +1,6 @@
+awk '/^function\(resolve_dependencies/,/^endfunction\(\)/' \                                                                                                         
+      ~/grpc_sdk/cmake/ResolveDependencies.cmake 
+
 for nupkg in *.nupkg; do                                                                                                                                             
       base="${nupkg%.nupkg}"                                                                                                                                         
       target="$HOME/$base"
