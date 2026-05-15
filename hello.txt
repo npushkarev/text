@@ -1,3 +1,13 @@
+cd ~                                                                                                                                                                 
+  for nupkg in ~/conan-master/output-x86_64-test/{abseil,protobuf,openssl,re2,c-ares,zlib}.lin.gcc84.shared.x86_64.*.nupkg; do
+      [ -f "$nupkg" ] || { echo "MISSING: $nupkg"; continue; }                                                                                                         
+      base=$(basename "$nupkg" .nupkg)
+      mkdir -p "$HOME/$base"                                                                                                                                           
+      ( cd "$HOME/$base" && unzip -oq "$nupkg" && \
+        [ -d lin.gcc84.shared.x86_64 ] && cp -r lin.gcc84.shared.x86_64/* . )                                                                                          
+  done            
+  ls ~/ | grep -E '^(abseil|protobuf|openssl|re2|c-ares|zlib)\.'  
+
 
 find ~/grpc.lin.gcc84.shared.x86_64.1.78.1 -maxdepth 4 -type d                                                                                                       
   ls    ~/grpc.lin.gcc84.shared.x86_64.1.78.1/lin.gcc84.shared.x86_64/lib/native/                                                                                      
