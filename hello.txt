@@ -1,3 +1,12 @@
+for nupkg in *.nupkg; do                                                                                                                                           
+      base="${nupkg%.nupkg}"
+      target="$HOME/$base"
+      rm -rf "$target"                # удалить старую (распакованную)
+      mkdir -p "$target"                                                                                                                                               
+      cp "$nupkg" "$target/"          # КОПИРУЕМ файл, не распаковываем
+      echo "✓ $nupkg → $target/$nupkg"                                                                                                                                 
+  done 
+
 cmake -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchains/linux_x86_64.cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON ../.. 2>&1 | tee                            
   /tmp/grpc_sdk_configure_v2.log 
 
