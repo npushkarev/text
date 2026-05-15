@@ -1,3 +1,8 @@
+ find ~/protobuf.lin.gcc84.shared.x86_64.5.29.6 -type f \( -name 'protoc*' \) 2>/dev/null                                                                             
+  find ~/grpc.lin.gcc84.shared.x86_64.1.78.1     -type f \( -name 'grpc_cpp_plugin*' -o -name 'protoc*' \) 2>/dev/null
+
+
+
 # Fixed component name before set definition (replacing invalid characters)                                                                                          
   set(_component_name_definition "${_component_name}")                                                                                                                 
   string(REPLACE "-" "_" _component_name_definition "${_component_name_definition}")
