@@ -1,4 +1,11 @@
-awk '/^function\(resolve_dependencies/,/^endfunction\(\)/' \                                                                                                         
+
+find ~/grpc.lin.gcc84.shared.x86_64.1.78.1 -maxdepth 4 -type d                                                                                                       
+  ls    ~/grpc.lin.gcc84.shared.x86_64.1.78.1/lin.gcc84.shared.x86_64/lib/native/                                                                                      
+  # для сравнения как лежит у legacy-эталона:                                                                                                                          
+  find ~/exceptions.lin.gcc84.shared.x86_64.0.5.0 -maxdepth 3 -type d                                                                                                  
+                                                                                                                                                                       
+  И заодно дай определение get_folder_suffix:                                                                                                                          
+  grep -rn "function(get_folder_suffix\|macro(get_folder_suffix" ~/grpc_sdk/cmake/awk '/^function\(resolve_dependencies/,/^endfunction\(\)/' \                                                                                                         
       ~/grpc_sdk/cmake/ResolveDependencies.cmake 
 
 for nupkg in *.nupkg; do                                                                                                                                             
