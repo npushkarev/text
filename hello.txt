@@ -1,3 +1,23 @@
+for pkg_dir in ~/abseil.lin.gcc84.shared.x86_64.* \
+                 ~/protobuf.lin.gcc84.shared.x86_64.* \
+                 ~/openssl.lin.gcc84.shared.x86_64.* \                                                                                                                 
+                 ~/re2.lin.gcc84.shared.x86_64.* \
+                 ~/c-ares.lin.gcc84.shared.x86_64.* \                                                                                                                  
+                 ~/zlib.lin.gcc84.shared.x86_64.*; do
+      [ -d "$pkg_dir" ] || continue                                                                                                                                    
+      rel="$pkg_dir/lib/native/lin-gcc84-shared-x86_64"                                                                                                                
+      deb="$pkg_dir/lib/native/lin-gcc84-shared-x86_64-d"
+      [ -d "$rel" ] || continue                                                                                                                                        
+      mkdir -p "$deb"
+      ( cd "$deb" && for so in ../lin-gcc84-shared-x86_64/*; do                                                                                                        
+          [ -e "$so" ] && ln -sf "$so" "$(basename "$so")"                                                                                                             
+      done )                                                                                                                                                           
+      echo "  $pkg_dir → $(ls "$deb" | wc -l) symlinks"                                                                                                                
+  done
+
+
+
+
 cd ~                                                                                                                                                                 
   for nupkg in ~/conan-master/output-x86_64-test/{abseil,protobuf,openssl,re2,c-ares,zlib}.lin.gcc84.shared.x86_64.*.nupkg; do
       [ -f "$nupkg" ] || { echo "MISSING: $nupkg"; continue; }                                                                                                         
