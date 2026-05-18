@@ -1,6 +1,8 @@
 find ~/grpc_sdk -maxdepth 3 \( -name "1.sh" -o -name "nuget.config" -o -name "packages.config" -o -name "*.targets" \) 2>/dev/null
   grep -n "installed\|nuget\|packages_dir\|NUGET\|packages/" ~/grpc_sdk/cmake/ResolveDependencies.cmake | head -30
 
+grep -rn "install_nuget_packages\b\|find_installed_package\b" ~/grpc_sdk/cmake/   
+
 # Fixed component name before set definition (replacing invalid characters)                                                                                          
   set(_component_name_definition "${_component_name}")                                                                                                                 
   string(REPLACE "-" "_" _component_name_definition "${_component_name_definition}")
