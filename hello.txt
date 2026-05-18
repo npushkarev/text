@@ -1,3 +1,11 @@
+set(${project_name}_dependencies
+      abseil:20250127.0                                                                                                               
+      protobuf:5.29.6  
+      openssl:3.4.5                                                                                                                   
+      re2:20251105                                          
+      c-ares:1.34.6
+      zlib:1.3.1   
+      )
  mkdir -p /tmp/repack && cd /tmp/repack                                                                                              
                                                             
   for nupkg in ~/conan-master/output-x86_64-test/*.lin.gcc84.shared.x86_64.*.nupkg; do                                                
