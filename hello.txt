@@ -1,4 +1,4 @@
-PROFILE=lin-gcc84-x86_64 PROFILE_BUILD=lin-gcc84-x86_64 ./test-astra/run_test_grpc.sh  
+ PROFILE=profiles/lin-gcc84-x86_64 PROFILE_BUILD=profiles/lin-gcc84-x86_64 ./test-astra/run_test_grpc.sh 
 
 
 # Fixed component name before set definition (replacing invalid characters)                                                                                          
