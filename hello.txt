@@ -1,5 +1,5 @@
- find ~/protobuf.lin.gcc84.shared.x86_64.5.29.6 ~/grpc.lin.gcc84.shared.x86_64.1.78.1 -iname '*protoc*' -o -iname '*plugin*' 2>/dev/null
-
+ curl -o check.nupkg https://proget.inc.elara.local/nuget/Default/package/grpc.lin.gcc84.shared.x86_64/1.78.1
+  unzip -l check.nupkg | head -15 
 
 # Fixed component name before set definition (replacing invalid characters)                                                                                          
   set(_component_name_definition "${_component_name}")                                                                                                                 
