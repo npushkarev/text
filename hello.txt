@@ -1,5 +1,5 @@
- curl -o check.nupkg https://proget.inc.elara.local/nuget/Default/package/grpc.lin.gcc84.shared.x86_64/1.78.1
-  unzip -l check.nupkg | head -15 
+find ~/grpc_sdk -maxdepth 3 \( -name "1.sh" -o -name "nuget.config" -o -name "packages.config" -o -name "*.targets" \) 2>/dev/null
+  grep -n "installed\|nuget\|packages_dir\|NUGET\|packages/" ~/grpc_sdk/cmake/ResolveDependencies.cmake | head -30
 
 # Fixed component name before set definition (replacing invalid characters)                                                                                          
   set(_component_name_definition "${_component_name}")                                                                                                                 
