@@ -1,3 +1,10 @@
+ set(_name_definition "${_name}")                      
+      string(REPLACE "-" "_" _name_definition "${_name_definition}")                                                                  
+      string(REPLACE "+" "p" _name_definition "${_name_definition}")
+
+add_definitions(-D${_name_definition}_${_component_name_definition}_${_type}_DEFINE)
+
+
 for pkg_dir in /tmp/{abseil,protobuf,openssl,re2,c-ares,zlib}.lin.gcc84.shared.x86_64.*; do                                         
       rel="$pkg_dir/lib/native/lin-gcc84-shared-x86_64"                                                                               
       deb="$pkg_dir/lib/native/lin-gcc84-shared-x86_64-d"                                                                           
