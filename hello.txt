@@ -1,4 +1,37 @@
- PROFILE=profiles/lin-gcc84-x86_64 PROFILE_BUILD=profiles/lin-gcc84-x86_64 ./test-astra/run_test_grpc.sh 
+ mkdir -p /tmp/repack && cd /tmp/repack                                                                                              
+                                                            
+  for nupkg in ~/conan-master/output-x86_64-test/*.lin.gcc84.shared.x86_64.*.nupkg; do                                                
+      base=$(basename "$nupkg" .nupkg)             # grpc.lin.gcc84.shared.x86_64.1.78.1
+      pkg_name=$(echo "$base" | cut -d. -f1)       # grpc (или c-ares — cut по точке)                                                 
+                                                                                                                                      
+      work=/tmp/repack/$base                                                                                                          
+      rm -rf "$work" && mkdir -p "$work"                                                                                              
+      unzip -q "$nupkg" -d "$work"                                                                                                    
+   
+      # Сплющить variant_dir обёртку                                                                                                  
+      if [ -d "$work/lin.gcc84.shared.x86_64" ]; then       
+          cp -rT "$work/lin.gcc84.shared.x86_64" "$work/"                                                                             
+          rm -rf "$work/lin.gcc84.shared.x86_64"                                                                                      
+      fi
+                                                                                                                                      
+      # Поднять .nuspec из nuget/ в корень                                                                                            
+      if [ -f "$work/nuget/$pkg_name.nuspec" ]; then
+          mv "$work/nuget/$pkg_name.nuspec" "$work/$pkg_name.nuspec"                                                                  
+          rmdir "$work/nuget" 2>/dev/null || true                                                                                     
+      fi
+                                                                                                                                      
+      ( cd "$work" && zip -rq "/tmp/repack/$base.nupkg" . )                                                                           
+      rm -rf "$work"
+      echo "OK: /tmp/repack/$base.nupkg"                                                                                              
+  done                                                      
+
+  ls -la /tmp/repack/*.nupkg                                                                                                          
+   
+  Проверь что получилось:                                                                                                             
+  unzip -l /tmp/repack/grpc.lin.gcc84.shared.x86_64.1.78.1.nupkg | head -10
+
+
+PROFILE=profiles/lin-gcc84-x86_64 PROFILE_BUILD=profiles/lin-gcc84-x86_64 ./test-astra/run_test_grpc.sh 
 
 
 # Fixed component name before set definition (replacing invalid characters)                                                                                          
