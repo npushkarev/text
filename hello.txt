@@ -1,3 +1,15 @@
+for pkg_dir in /tmp/{abseil,protobuf,openssl,re2,c-ares,zlib}.lin.gcc84.shared.x86_64.*; do                                         
+      rel="$pkg_dir/lib/native/lin-gcc84-shared-x86_64"                                                                               
+      deb="$pkg_dir/lib/native/lin-gcc84-shared-x86_64-d"                                                                           
+      if [ -d "$rel" ]; then                                                                                                          
+          mkdir -p "$deb"                                                                                                             
+          ( cd "$deb" && for so in ../lin-gcc84-shared-x86_64/*; do                                                                 
+              ln -sf "$so" "$(basename "$so")"                                                                                        
+          done )                                                                                                                    
+          echo "OK: $deb"                                                                                                             
+      fi                                                                                                                              
+  done 
+
 set(${project_name}_dependencies
       abseil:20250127.0                                                                                                               
       protobuf:5.29.6  
