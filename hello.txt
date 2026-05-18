@@ -1,6 +1,4 @@
- sed -n '1,80p' ~/grpc_sdk/cmake/NuGetInstall.cmake                                                                                  
-  sed -n '320,400p' ~/grpc_sdk/cmake/NuGetInstall.cmake                                                                               
-  cat ~/grpc_sdk/cmake/HttpHelper.cmake
+ grep -n "URL\|http\|proget\|teamcity\|set(\|function" ~/grpc_sdk/cmake/NuGetProto.cmake | head -40   
 
 
 # Fixed component name before set definition (replacing invalid characters)                                                                                          
