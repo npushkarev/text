@@ -1,4 +1,4 @@
- grep -n "URL\|http\|proget\|teamcity\|set(\|function" ~/grpc_sdk/cmake/NuGetProto.cmake | head -40   
+PROFILE=lin-gcc84-x86_64 PROFILE_BUILD=lin-gcc84-x86_64 ./test-astra/run_test_grpc.sh  
 
 
 # Fixed component name before set definition (replacing invalid characters)                                                                                          
