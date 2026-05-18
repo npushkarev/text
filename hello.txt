@@ -1,6 +1,7 @@
-sed -n '225,260p' ~/grpc_sdk/cmake/ResolveDependencies.cmake
-  sed -n '270,320p' ~/grpc_sdk/cmake/NuGetInstall.cmake                                                                               
-  grep -rn "REPO\|http\|proget\|teamcity\|NUGET_REPO" ~/grpc_sdk/cmake/ ~/grpc_sdk/CMakeLists.txt 2>/dev/null | head -3
+ sed -n '1,80p' ~/grpc_sdk/cmake/NuGetInstall.cmake                                                                                  
+  sed -n '320,400p' ~/grpc_sdk/cmake/NuGetInstall.cmake                                                                               
+  cat ~/grpc_sdk/cmake/HttpHelper.cmake
+
 
 # Fixed component name before set definition (replacing invalid characters)                                                                                          
   set(_component_name_definition "${_component_name}")                                                                                                                 
