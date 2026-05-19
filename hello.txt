@@ -1,203 +1,56 @@
-LD_PATHS=""                                                                                                                       
+#!/bin/bash                                                                                                                         
+  # Использование: source /tmp/setup_protoc_env.sh                                                                                    
+                                                                                                                                      
+  # 1. Собрать LD_LIBRARY_PATH из всех conan package folder'ов
+  LD_PATHS=""                                                                                                                         
   for d in /home/user/.conan2/p/b/*/p/lib; do                                                                                         
       [ -d "$d" ] && LD_PATHS="$d:$LD_PATHS"
   done                                                                                                                                
-  export LD_LIBRARY_PATH="${LD_PATHS}${LD_LIBRARY_PATH}"
-
-
-cp "$GRPC_PLUGIN" ~/bin/grpc_cpp_plugin                                                                                             
-  chmod +x ~/bin/grpc_cpp_plugin                                                                                                    
-  ls -la ~/bin/                                                                                                                       
-  # должны быть protoc и grpc_cpp_plugin, оба executable                                                                            
+                                                                                                                                    
+  if [ -z "$LD_PATHS" ]; then                                                                                                         
+      echo "ERROR: conan package folders not found in /home/user/.conan2/p/b/*/p/lib"                                               
+      return 1 2>/dev/null || exit 1                                                                                                  
+  fi
                                                                                                                                       
-  Затем запускай build:
-                                                                                                                                      
-  export PATH=~/bin:$PATH                                                                                                           
-  which protoc && protoc --version   # должно быть ~/bin/protoc и libprotoc 29.6                                                      
+  export LD_LIBRARY_PATH="${LD_PATHS}${LD_LIBRARY_PATH}"                                                                              
+   
+  echo "=== LD_LIBRARY_PATH dirs (first 10): ==="                                                                                     
+  echo "$LD_LIBRARY_PATH" | tr ':' '\n' | head -10                                                                                  
+  echo                                                                                                                                
+   
+  # 2. Проверить grpc_cpp_plugin                                                                                                      
+  echo "=== grpc_cpp_plugin ==="                                                                                                    
+  if [ -x ~/bin/grpc_cpp_plugin ]; then                                                                                               
+      missing=$(ldd ~/bin/grpc_cpp_plugin 2>&1 | grep "not found")
+      if [ -z "$missing" ]; then                                                                                                      
+          echo "OK: все зависимости найдены"                                                                                        
+      else                                                                                                                            
+          echo "MISSING:"                                                                                                           
+          echo "$missing"                                                                                                             
+      fi
+  else                                                                                                                                
+      echo "WARN: ~/bin/grpc_cpp_plugin не найден"                                                                                  
+  fi
+  echo                                                                                                                                
   
-  cd /tmp/grpc_sdk/.build/lin.gcc.shared.x64 
-
-  mkdir -p ~/bin                                                                                                                      
-  cp "$PROTOC" ~/bin/protoc                                                                                                           
-  cp "$GRPC_PLUGIN" ~/bin/grpc_cpp_plugin                                                                                             
-  chmod +x ~/bin/protoc ~/bin/grpc_cpp_plugin
+  # 3. Проверить protoc                                                                                                               
+  echo "=== protoc ==="                                                                                                             
+  if [ -x ~/bin/protoc ]; then
+      missing_protoc=$(ldd ~/bin/protoc 2>&1 | grep "not found")
+      if [ -z "$missing_protoc" ]; then                                                                                               
+          echo "OK: все зависимости найдены"
+          ~/bin/protoc --version                                                                                                      
+      else                                                                                                                            
+          echo "MISSING:"
+          echo "$missing_protoc"                                                                                                      
+      fi                                                                                                                            
+  else
+      echo "WARN: ~/bin/protoc не найден"
+  fi                                                                                                                                  
+  echo
                                                                                                                                       
-  export PATH=~/bin:$PATH                                                                                                           
-  which protoc && protoc --version    # должно показать ~/bin/protoc и 29.6                                                                                       
-
-add_definitions(-D${_name_definition}_${_component_name_definition}_${_type}_DEFINE)
-
-
-for pkg_dir in /tmp/{abseil,protobuf,openssl,re2,c-ares,zlib}.lin.gcc84.shared.x86_64.*; do                                         
-      rel="$pkg_dir/lib/native/lin-gcc84-shared-x86_64"                                                                               
-      deb="$pkg_dir/lib/native/lin-gcc84-shared-x86_64-d"                                                                           
-      if [ -d "$rel" ]; then                                                                                                          
-          mkdir -p "$deb"                                                                                                             
-          ( cd "$deb" && for so in ../lin-gcc84-shared-x86_64/*; do                                                                 
-              ln -sf "$so" "$(basename "$so")"                                                                                        
-          done )                                                                                                                    
-          echo "OK: $deb"                                                                                                             
-      fi                                                                                                                              
-  done 
-
-set(${project_name}_dependencies
-      abseil:20250127.0                                                                                                               
-      protobuf:5.29.6  
-      openssl:3.4.5                                                                                                                   
-      re2:20251105                                          
-      c-ares:1.34.6
-      zlib:1.3.1   
-      )
- mkdir -p /tmp/repack && cd /tmp/repack                                                                                              
-                                                            
-  for nupkg in ~/conan-master/output-x86_64-test/*.lin.gcc84.shared.x86_64.*.nupkg; do                                                
-      base=$(basename "$nupkg" .nupkg)             # grpc.lin.gcc84.shared.x86_64.1.78.1
-      pkg_name=$(echo "$base" | cut -d. -f1)       # grpc (или c-ares — cut по точке)                                                 
-                                                                                                                                      
-      work=/tmp/repack/$base                                                                                                          
-      rm -rf "$work" && mkdir -p "$work"                                                                                              
-      unzip -q "$nupkg" -d "$work"                                                                                                    
-   
-      # Сплющить variant_dir обёртку                                                                                                  
-      if [ -d "$work/lin.gcc84.shared.x86_64" ]; then       
-          cp -rT "$work/lin.gcc84.shared.x86_64" "$work/"                                                                             
-          rm -rf "$work/lin.gcc84.shared.x86_64"                                                                                      
-      fi
-                                                                                                                                      
-      # Поднять .nuspec из nuget/ в корень                                                                                            
-      if [ -f "$work/nuget/$pkg_name.nuspec" ]; then
-          mv "$work/nuget/$pkg_name.nuspec" "$work/$pkg_name.nuspec"                                                                  
-          rmdir "$work/nuget" 2>/dev/null || true                                                                                     
-      fi
-                                                                                                                                      
-      ( cd "$work" && zip -rq "/tmp/repack/$base.nupkg" . )                                                                           
-      rm -rf "$work"
-      echo "OK: /tmp/repack/$base.nupkg"                                                                                              
-  done                                                      
-
-  ls -la /tmp/repack/*.nupkg                                                                                                          
-   
-  Проверь что получилось:                                                                                                             
-  unzip -l /tmp/repack/grpc.lin.gcc84.shared.x86_64.1.78.1.nupkg | head -10
-
-
-PROFILE=profiles/lin-gcc84-x86_64 PROFILE_BUILD=profiles/lin-gcc84-x86_64 ./test-astra/run_test_grpc.sh 
-
-
-# Fixed component name before set definition (replacing invalid characters)                                                                                          
-  set(_component_name_definition "${_component_name}")                                                                                                                 
-  string(REPLACE "-" "_" _component_name_definition "${_component_name_definition}")
-  string(REPLACE "+" "p" _component_name_definition "${_component_name_definition}")                                                                                   
-   
-  # Same sanitization for package name (handles "c-ares" → "c_ares").                                                                                                  
-  set(_name_definition "${_name}")
-  string(REPLACE "-" "_" _name_definition "${_name_definition}")                                                                                                       
-  string(REPLACE "+" "p" _name_definition "${_name_definition}")                                                                                                       
-   
-  # Set library type define.                                                                                                                                           
-  add_definitions(-D${_name_definition}_${_component_name_definition}_${_type}_DEFINE)
-
-
-
-for pkg_dir in ~/abseil.lin.gcc84.shared.x86_64.* \
-                 ~/protobuf.lin.gcc84.shared.x86_64.* \
-                 ~/openssl.lin.gcc84.shared.x86_64.* \                                                                                                                 
-                 ~/re2.lin.gcc84.shared.x86_64.* \
-                 ~/c-ares.lin.gcc84.shared.x86_64.* \                                                                                                                  
-                 ~/zlib.lin.gcc84.shared.x86_64.*; do
-      [ -d "$pkg_dir" ] || continue                                                                                                                                    
-      rel="$pkg_dir/lib/native/lin-gcc84-shared-x86_64"                                                                                                                
-      deb="$pkg_dir/lib/native/lin-gcc84-shared-x86_64-d"
-      [ -d "$rel" ] || continue                                                                                                                                        
-      mkdir -p "$deb"
-      ( cd "$deb" && for so in ../lin-gcc84-shared-x86_64/*; do                                                                                                        
-          [ -e "$so" ] && ln -sf "$so" "$(basename "$so")"                                                                                                             
-      done )                                                                                                                                                           
-      echo "  $pkg_dir → $(ls "$deb" | wc -l) symlinks"                                                                                                                
-  done
-
-
-
-
-cd ~                                                                                                                                                                 
-  for nupkg in ~/conan-master/output-x86_64-test/{abseil,protobuf,openssl,re2,c-ares,zlib}.lin.gcc84.shared.x86_64.*.nupkg; do
-      [ -f "$nupkg" ] || { echo "MISSING: $nupkg"; continue; }                                                                                                         
-      base=$(basename "$nupkg" .nupkg)
-      mkdir -p "$HOME/$base"                                                                                                                                           
-      ( cd "$HOME/$base" && unzip -oq "$nupkg" && \
-        [ -d lin.gcc84.shared.x86_64 ] && cp -r lin.gcc84.shared.x86_64/* . )                                                                                          
-  done            
-  ls ~/ | grep -E '^(abseil|protobuf|openssl|re2|c-ares|zlib)\.'  
-
-
-find ~/grpc.lin.gcc84.shared.x86_64.1.78.1 -maxdepth 4 -type d                                                                                                       
-  ls    ~/grpc.lin.gcc84.shared.x86_64.1.78.1/lin.gcc84.shared.x86_64/lib/native/                                                                                      
-  # для сравнения как лежит у legacy-эталона:                                                                                                                          
-  find ~/exceptions.lin.gcc84.shared.x86_64.0.5.0 -maxdepth 3 -type d                                                                                                  
-                                                                                                                                                                       
-  И заодно дай определение get_folder_suffix:                                                                                                                          
-  grep -rn "function(get_folder_suffix\|macro(get_folder_suffix" ~/grpc_sdk/cmake/awk '/^function\(resolve_dependencies/,/^endfunction\(\)/' \                                                                                                         
-      ~/grpc_sdk/cmake/ResolveDependencies.cmake 
-
-for nupkg in *.nupkg; do                                                                                                                                             
-      base="${nupkg%.nupkg}"                                                                                                                                         
-      target="$HOME/$base"
-      rm -rf "$target"
-      mkdir -p "$target"                                                                                                                                               
-      cp "$nupkg" "$target/$nupkg"          # .nupkg сам как файл
-      unzip -o "$nupkg" -d "$target" > /dev/null   # И распаковать рядом                                                                                               
-      echo "✓ $nupkg → $target/ (файл + распаковка)"                                                                                                                 
-  done   
-
-cmake -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchains/linux_x86_64.cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON ../.. 2>&1 | tee                            
-  /tmp/grpc_sdk_configure_v2.log 
-
-cat > /tmp/configure_grpc_sdk.sh <<'EOF'                                                                                                                             
-  #!/bin/bash                                                                                                                                                        
-  set -euo pipefail                                                                                                                                                    
-  cd ~/grpc_sdk/.build/lin.gcc.shared.x64
-  cmake \                                                                                                                                                              
-      -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchains/linux_x86_64.cmake \                                                                                             
-      -DCMAKE_BUILD_TYPE=Release \                                                                                                                                     
-      -DBUILD_SHARED_LIBS=ON \                                                                                                                                         
-      ../.. 2>&1 | tee /tmp/grpc_sdk_configure.log                                                                                                                     
-  EOF                                                                                                                                                                  
-  chmod +x /tmp/configure_grpc_sdk.sh                                                                                                                                
-  /tmp/configure_grpc_sdk.sh                                                                                                                             
-  tail -50 /tmp/grpc_sdk_configure.log
-
-
-PROFILE=$(pwd)/profiles/lin-gcc84-x86_64 \                                                                                                                           
-  PROFILE_BUILD=$(pwd)/profiles/lin-gcc84-x86_64 \                                                                                                                     
-  bash test-astra/run_test_grpc.sh 2>&1 | tee /tmp/grpc-x86_64-build.log   
-
-
-cat > /tmp/build_x86_64.sh <<'EOF'
-  #!/bin/bash                                                                                                                                                          
-  set -euo pipefail                                                                                                                                                  
-  cd ~/conan-master                                                                                                                                                    
-                                                                                                                                                                       
-  echo "=== Шаг 1: docker build ==="
-  sudo docker build \                                                                                                                                                  
-      --build-arg X64_BASE_IMAGE=proget.inc.elara.local/main/library/gcc84-build-x86_64:0.1.0 \                                                                      
-      --build-arg BASE_IMAGE=proget.inc.elara.local/main/library/gcc84-build-x86_64:0.1.0 \                                                                            
-      -f Dockerfile.grpc-tc-mirror \                                                                                                                                   
-      -t grpc-tc-mirror-x86_64-local:0.1.0 \                                                                                                                           
-      .                                                                                                                                                                
-                                                                                                                                                                     
-  echo "=== Шаг 2: docker run grpc build ==="                                                                                                                          
-  mkdir -p output-x86_64-test                                                                                                                                        
-  sudo docker run --rm \
-      -v "$(pwd)":/work/conan-recipes \
-      -v "$(pwd)/output-x86_64-test":/work/conan-recipes/output \                                                                                                      
-      -v conan-cache-x86_64-test:/root/.conan2 \
-      -e PROFILE=/work/conan-recipes/profiles/lin-gcc84-x86_64 \                                                                                                       
-      -e PROFILE_BUILD=/work/conan-recipes/profiles/lin-gcc84-x86_64 \                                                                                               
-      grpc-tc-mirror-x86_64-local:0.1.0 \                                                                                                                              
-      bash /work/conan-recipes/test-astra/run_test_grpc.sh 2>&1 | tee /tmp/grpc-x86_64-build.log                                                                     
-                                                                                                                                                                       
-  echo "=== Done. Output: ==="                                                                                                                                         
-  ls -lh ~/conan-master/output-x86_64-test/*.nupkg                                                                                                                     
-  EOF                                                                                                                                                                  
-  chmod +x /tmp/build_x86_64.sh                                                                                                                                        
-  /tmp/build_x86_64.sh
+  # 4. PATH                                                                                                                         
+  export PATH=~/bin:$PATH
+  echo "=== PATH: ==="
+  which protoc                                                                                                                        
+  which grpc_cpp_plugin
