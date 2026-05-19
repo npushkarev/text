@@ -14,6 +14,9 @@
 #   ./deps_report.sh reverse <pkg> <ver>      — reverse-дерево: кто потребляет pkg
 #   ./deps_report.sh migration                — reverse-деревья для всех outdated
 #   ./deps_report.sh outdated                 — список outdated entries в кэше
+#   ./deps_report.sh el_conf                  — forward-дерево от el_conf вниз
+#   ./deps_report.sh el_conf-reverse          — reverse-tree для каждой top-dep el_conf
+#   ./deps_report.sh el_conf-graph            — forward+reverse для каждой top-dep el_conf
 #
 # Переменные окружения:
 #   NUGET_DIR    — путь к NuGet-кэшу (default: $HOME/.nuget/packages)
@@ -223,6 +226,68 @@ deps_el_conf_top() {
     extract_deps "$var_file" | sed 's/^/    /'
 }
 
+# ---------- el_conf-specific отчёты -------------------------------------------
+
+# Список top-level deps el_conf'a в виде "name:version" по одному на строку.
+el_conf_top_deps_list() {
+    local var_file="${EL_CONF_DIR}/CMakeLists.var"
+    [ -f "$var_file" ] || return 0
+    extract_deps "$var_file"
+}
+
+# Forward-дерево от el_conf вниз: top-level deps + рекурсивный обход каждой.
+el_conf_forward_tree() {
+    echo "========================================="
+    echo "el_conf full forward dependency tree"
+    echo "========================================="
+    echo "el_conf:source"
+    local dep
+    while IFS= read -r dep; do
+        [ -z "$dep" ] && continue
+        local name="${dep%%:*}"
+        local ver="${dep##*:}"
+        deps_tree "$name" "$ver" "    "
+    done < <(el_conf_top_deps_list)
+}
+
+# Reverse-tree для каждой top-dep el_conf'a (кто ещё её использует кроме el_conf).
+el_conf_reverse_for_each() {
+    echo "========================================="
+    echo "Reverse-tree for each el_conf top-level dep"
+    echo "========================================="
+    echo "Для каждой прямой зависимости el_conf — кто ещё её потребляет в кэше."
+    echo
+    local dep
+    while IFS= read -r dep; do
+        [ -z "$dep" ] && continue
+        echo "### Consumers of $dep"
+        deps_reverse_tree "${dep%%:*}" "${dep##*:}"
+        echo
+    done < <(el_conf_top_deps_list)
+}
+
+# Богатый отчёт: forward (что тянет) + reverse (кто ещё тянет) для каждой top-dep.
+el_conf_graph_report() {
+    echo "========================================="
+    echo "el_conf dependency graph — forward + reverse for each top-level dep"
+    echo "========================================="
+    echo
+    local dep
+    while IFS= read -r dep; do
+        [ -z "$dep" ] && continue
+        local name="${dep%%:*}"
+        local ver="${dep##*:}"
+        echo "######## $dep ########"
+        echo
+        echo "--- forward (what '$dep' pulls in) ---"
+        deps_tree "$name" "$ver"
+        echo
+        echo "--- reverse (who else consumes '$dep') ---"
+        deps_reverse_tree "$name" "$ver"
+        echo
+    done < <(el_conf_top_deps_list)
+}
+
 # Reverse-деревья для всех pkg-кандидатов на миграцию.
 migration_consumers_report() {
     echo "========================================="
@@ -314,8 +379,17 @@ main() {
         outdated)
             deps_outdated
             ;;
+        el_conf)
+            el_conf_forward_tree
+            ;;
+        el_conf-reverse)
+            el_conf_reverse_for_each
+            ;;
+        el_conf-graph)
+            el_conf_graph_report
+            ;;
         *)
-            echo "Usage: $0 [full|flat|tree <pkg> <ver>|reverse <pkg> <ver>|migration|outdated]" >&2
+            echo "Usage: $0 [full|flat|tree <pkg> <ver>|reverse <pkg> <ver>|migration|outdated|el_conf|el_conf-reverse|el_conf-graph]" >&2
             exit 1
             ;;
     esac
