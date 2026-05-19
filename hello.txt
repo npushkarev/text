@@ -1,31 +1,47 @@
 #!/bin/bash
 #
-# deps_report.sh — отчёт по дереву зависимостей legacy NuGet пакетов
+# deps_report.sh — отчёт по дереву зависимостей legacy NuGet пакетов.
 #
-# Назначение: показать, какие legacy пакеты в локальном NuGet-кэше
-# (~/.nuget/packages) тянут устаревшие версии транзитивных зависимостей
-# (protobuf 4.x, openssl 1.1.x, zlib 1.3.0). Используется для подготовки
-# списка SDK к пересборке на современных версиях.
+# Назначение:
+#   1. Показать прямые/транзитивные зависимости каждого pkg в NuGet-кэше.
+#   2. Показать обратные зависимости (кто использует pkg-кандидат на миграцию).
+#   3. Найти outdated transitive deps (protobuf 4.x, openssl 1.1.x, zlib 1.3.0).
 #
 # Использование:
-#   ./deps_report.sh                          — полный отчёт в stdout
-#   ./deps_report.sh flat                     — только flat-карта (pkg → deps)
-#   ./deps_report.sh tree <pkg_name> <ver>    — дерево от конкретного pkg
-#   ./deps_report.sh outdated                 — только список outdated deps
+#   ./deps_report.sh                          — полный отчёт (forward + reverse)
+#   ./deps_report.sh flat                     — карта pkg → его _dependencies
+#   ./deps_report.sh tree <pkg> <ver>         — forward-дерево от pkg вниз
+#   ./deps_report.sh reverse <pkg> <ver>      — reverse-дерево: кто потребляет pkg
+#   ./deps_report.sh migration                — reverse-деревья для всех outdated
+#   ./deps_report.sh outdated                 — список outdated entries в кэше
 #
 # Переменные окружения:
-#   NUGET_DIR    — путь к NuGet-кэшу (по умолчанию ~/.nuget/packages)
-#   EL_CONF_DIR  — путь к корню el_conf (для top-level deps, по умолчанию ~/el_conf)
+#   NUGET_DIR    — путь к NuGet-кэшу (default: $HOME/.nuget/packages)
+#   EL_CONF_DIR  — путь к корню el_conf  (default: $HOME/el_conf)
 #
 # Примеры:
 #   ./deps_report.sh > /tmp/report.txt
 #   ./deps_report.sh tree mosquitto 2.0.19
-#   ./deps_report.sh tree cs_service_sdk 3.16.0
+#   ./deps_report.sh reverse openssl 1.1.11        # кто тянет старый openssl
+#   ./deps_report.sh reverse protobuf 4.25.2       # кто тянет старый protobuf
+#   ./deps_report.sh migration > /tmp/owners.txt
 #
 set -euo pipefail
 
 NUGET_DIR="${NUGET_DIR:-$HOME/.nuget/packages}"
 EL_CONF_DIR="${EL_CONF_DIR:-$HOME/el_conf}"
+
+# Пакеты-кандидаты на миграцию (обновить при необходимости).
+MIGRATION_CANDIDATES=(
+    "openssl:1.1.11"
+    "protobuf:4.25.2"
+    "zlib:1.3.0"
+    "mosquitto:2.0.19"
+    "gsd_parser:0.15.0"
+    "grpc:1.60.1"
+)
+
+# ---------- helpers -----------------------------------------------------------
 
 # Найти CMakeLists.var для конкретной пары pkg+version в NuGet-кэше.
 find_var_file() {
@@ -48,35 +64,50 @@ extract_deps() {
     ' "$var_file"
 }
 
-# Flat view: каждый закэшированный pkg → его _dependencies блок.
-deps_flat() {
-    echo "========================================="
-    echo "Flat dependency map of $NUGET_DIR"
-    echo "========================================="
-    echo
-    local var_file
-    for var_file in $(find "$NUGET_DIR" -name CMakeLists.var 2>/dev/null | sort); do
-        # путь вида: <root>/<pkg>.lin.gcc84.shared.x86_64/<ver>/CMakeLists.var
-        local rel="${var_file#$NUGET_DIR/}"
-        local pkg_dir="${rel%%/*}"
-        local pkg_name="${pkg_dir%%.lin.*}"
-        local rest="${rel#$pkg_dir/}"
-        local pkg_ver="${rest%%/*}"
-
-        echo "=== ${pkg_name}:${pkg_ver} ==="
-        local deps
-        deps=$(extract_deps "$var_file")
-        if [ -z "$deps" ]; then
-            echo "    (no dependencies)"
-        else
-            echo "$deps" | sed 's/^/    /'
-        fi
-        echo
-    done
+# Превратить путь CMakeLists.var в "name:version" consumer'a.
+# В NuGet-кэше: <root>/<name>.lin.gcc84.shared.x86_64/<ver>/CMakeLists.var
+# el_conf репо:  $EL_CONF_DIR/CMakeLists.var → "el_conf:source"
+consumer_of() {
+    local var_file="$1"
+    if [[ "$var_file" == "$EL_CONF_DIR/"* ]]; then
+        echo "el_conf:source"
+        return
+    fi
+    local rel="${var_file#$NUGET_DIR/}"
+    local pkg_dir="${rel%%/*}"
+    local pkg_name="${pkg_dir%%.lin.*}"
+    local rest="${rel#$pkg_dir/}"
+    local pkg_ver="${rest%%/*}"
+    echo "${pkg_name}:${pkg_ver}"
 }
 
-# Рекурсивное дерево от заданной точки pkg+version.
-# Args: pkg_name pkg_ver indent seen_list
+# Все CMakeLists.var в кэше + (если есть) el_conf/CMakeLists.var.
+all_var_files() {
+    find "$NUGET_DIR" -name CMakeLists.var 2>/dev/null
+    [ -f "$EL_CONF_DIR/CMakeLists.var" ] && echo "$EL_CONF_DIR/CMakeLists.var"
+}
+
+# Построить ассоциативную мапу: dep "name:ver" → пробел-разделённый список consumers.
+declare -A CONSUMERS_MAP
+CONSUMERS_BUILT=0
+
+build_consumers_map() {
+    [ "$CONSUMERS_BUILT" = "1" ] && return
+    local var_file consumer dep
+    while IFS= read -r var_file; do
+        [ -f "$var_file" ] || continue
+        consumer="$(consumer_of "$var_file")"
+        while IFS= read -r dep; do
+            [ -z "$dep" ] && continue
+            CONSUMERS_MAP["$dep"]="${CONSUMERS_MAP[$dep]:-} $consumer"
+        done < <(extract_deps "$var_file")
+    done < <(all_var_files)
+    CONSUMERS_BUILT=1
+}
+
+# ---------- forward (что pkg тянет вниз) --------------------------------------
+
+# Рекурсивное дерево вниз от заданного pkg+version.
 deps_tree() {
     local pkg="$1"
     local ver="$2"
@@ -104,6 +135,7 @@ deps_tree() {
     deps=$(extract_deps "$var_file")
     [ -z "$deps" ] && return
 
+    local dep
     while IFS= read -r dep; do
         [ -z "$dep" ] && continue
         local name="${dep%%:*}"
@@ -112,8 +144,59 @@ deps_tree() {
     done <<< "$deps"
 }
 
-# Поиск transitive deps, блокирующих миграцию на conan-pkg:
-# protobuf 4.x, openssl 1.1.x, zlib 1.3.0
+# ---------- reverse (кто использует pkg) --------------------------------------
+
+# Рекурсивное reverse-дерево: показывает consumers'ов pkg+ver, потом их consumers'ов.
+deps_reverse_tree() {
+    local target="$1:$2"
+    local prefix="${3:-}"
+    local seen="${4:-}"
+
+    echo "${prefix}${target}"
+
+    case "$seen" in
+        *"|$target|"*)
+            echo "${prefix}    ↑ (already shown)"
+            return
+            ;;
+    esac
+    seen="${seen}|$target|"
+
+    build_consumers_map
+
+    local list="${CONSUMERS_MAP[$target]:-}"
+    [ -z "$list" ] && { echo "${prefix}    (no known consumers)"; return; }
+
+    # Уникальные consumers (один pkg может несколько раз попасть).
+    local consumer
+    for consumer in $(echo "$list" | tr ' ' '\n' | sort -u | grep -v '^$'); do
+        deps_reverse_tree "${consumer%:*}" "${consumer##*:}" "${prefix}    ↑ " "$seen"
+    done
+}
+
+# ---------- модули отчёта ------------------------------------------------------
+
+deps_flat() {
+    echo "========================================="
+    echo "Flat dependency map of $NUGET_DIR"
+    echo "========================================="
+    echo
+    local var_file
+    for var_file in $(find "$NUGET_DIR" -name CMakeLists.var 2>/dev/null | sort); do
+        local consumer
+        consumer="$(consumer_of "$var_file")"
+        echo "=== $consumer ==="
+        local deps
+        deps=$(extract_deps "$var_file")
+        if [ -z "$deps" ]; then
+            echo "    (no dependencies)"
+        else
+            echo "$deps" | sed 's/^/    /'
+        fi
+        echo
+    done
+}
+
 deps_outdated() {
     echo "========================================="
     echo "Outdated transitive deps blocking migration"
@@ -126,7 +209,6 @@ deps_outdated() {
         | sed "s|${NUGET_DIR}/||g"
 }
 
-# Top-level зависимости el_conf из его CMakeLists.var в репо-сорсах.
 deps_el_conf_top() {
     local var_file="${EL_CONF_DIR}/CMakeLists.var"
     echo "========================================="
@@ -141,7 +223,22 @@ deps_el_conf_top() {
     extract_deps "$var_file" | sed 's/^/    /'
 }
 
-# Полный отчёт: top deps + flat-карта + деревья по ключевым корням + outdated.
+# Reverse-деревья для всех pkg-кандидатов на миграцию.
+migration_consumers_report() {
+    echo "========================================="
+    echo "Migration consumers report"
+    echo "========================================="
+    echo "Для каждого устаревшего пакета — дерево потребителей вверх."
+    echo "↑ означает 'используется кем-то выше' (consumer)."
+    echo
+    local entry
+    for entry in "${MIGRATION_CANDIDATES[@]}"; do
+        echo "### Consumers of $entry"
+        deps_reverse_tree "${entry%:*}" "${entry##*:}"
+        echo
+    done
+}
+
 full_report() {
     echo "==============================================="
     echo "Legacy NuGet migration dependency report"
@@ -158,7 +255,7 @@ full_report() {
     echo
 
     echo "========================================="
-    echo "Trees for key roots"
+    echo "Forward trees for key roots"
     echo "========================================="
     echo
     local entry
@@ -177,6 +274,9 @@ full_report() {
         deps_tree "$name" "$ver"
         echo
     done
+
+    migration_consumers_report
+    echo
 
     deps_outdated
 }
@@ -199,11 +299,23 @@ main() {
             fi
             deps_tree "$pkg" "$ver"
             ;;
+        reverse)
+            local pkg="${2:-}"
+            local ver="${3:-}"
+            if [ -z "$pkg" ] || [ -z "$ver" ]; then
+                echo "Usage: $0 reverse <pkg_name> <version>" >&2
+                exit 1
+            fi
+            deps_reverse_tree "$pkg" "$ver"
+            ;;
+        migration)
+            migration_consumers_report
+            ;;
         outdated)
             deps_outdated
             ;;
         *)
-            echo "Usage: $0 [full|flat|tree <pkg> <ver>|outdated]" >&2
+            echo "Usage: $0 [full|flat|tree <pkg> <ver>|reverse <pkg> <ver>|migration|outdated]" >&2
             exit 1
             ;;
     esac
