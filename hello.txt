@@ -1,7 +1,8 @@
-for d in /home/user/.conan2/p/b/*/p/lib; do                                                                                         
+LD_PATHS=""                                                                                                                       
+  for d in /home/user/.conan2/p/b/*/p/lib; do                                                                                         
       [ -d "$d" ] && LD_PATHS="$d:$LD_PATHS"
   done                                                                                                                                
-  export LD_LIBRARY_PATH="${LD_PATHS}${LD_LIBRARY_PATH}"  
+  export LD_LIBRARY_PATH="${LD_PATHS}${LD_LIBRARY_PATH}"
 
 
 cp "$GRPC_PLUGIN" ~/bin/grpc_cpp_plugin                                                                                             
