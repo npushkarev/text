@@ -1,6 +1,7 @@
 PROTOC=/home/user/.conan2/p/b/proto30f5e22c4e615/p/bin/protoc   # либо тот что показал libprotoc 29.6                               
   GRPC_PLUGIN=/home/user/.conan2/p/b/grpc.../p/bin/grpc_cpp_plugin  # подставишь после find                                           
-    find /home/user/.conan2/p -name grpc_cpp_plugin -type f 2>/dev/null | grep "p/bin/"                                                 
+GRPC_PLUGIN=$(find /home/user/.conan2/p -name grpc_cpp_plugin -type f 2>/dev/null | grep "p/bin/" | head -1)                        
+  echo "Found: $GRPC_PLUGIN"                                               
                                                                                                                                                                                                                             
   mkdir -p ~/bin                                                                                                                      
   cp "$PROTOC" ~/bin/protoc                                                                                                           
