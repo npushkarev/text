@@ -1,74 +1,212 @@
-find /home/user/.nuget/packages -name "CMakeLists.var" 2>/dev/null \                                                                
-      | xargs grep -lE "protobuf:4|openssl:1\.1|zlib:1\.3\.0" 2>/dev/null                                                             
-   
-  echo "---"                                                                                                                          
-  find /home/user/.nuget/packages -name "CMakeLists.var" 2>/dev/null \                                                              
-      | xargs grep -HE "protobuf:[0-9]|openssl:[0-9]|zlib:[0-9]" 2>/dev/null \                                                        
-      | grep -E ":4\.|:1\.1\.|zlib:1\.3\.0"    
+#!/bin/bash
+#
+# deps_report.sh — отчёт по дереву зависимостей legacy NuGet пакетов
+#
+# Назначение: показать, какие legacy пакеты в локальном NuGet-кэше
+# (~/.nuget/packages) тянут устаревшие версии транзитивных зависимостей
+# (protobuf 4.x, openssl 1.1.x, zlib 1.3.0). Используется для подготовки
+# списка SDK к пересборке на современных версиях.
+#
+# Использование:
+#   ./deps_report.sh                          — полный отчёт в stdout
+#   ./deps_report.sh flat                     — только flat-карта (pkg → deps)
+#   ./deps_report.sh tree <pkg_name> <ver>    — дерево от конкретного pkg
+#   ./deps_report.sh outdated                 — только список outdated deps
+#
+# Переменные окружения:
+#   NUGET_DIR    — путь к NuGet-кэшу (по умолчанию ~/.nuget/packages)
+#   EL_CONF_DIR  — путь к корню el_conf (для top-level deps, по умолчанию ~/el_conf)
+#
+# Примеры:
+#   ./deps_report.sh > /tmp/report.txt
+#   ./deps_report.sh tree mosquitto 2.0.19
+#   ./deps_report.sh tree cs_service_sdk 3.16.0
+#
+set -euo pipefail
 
- mkdir -p .build/lin.gcc.shared.x64 && cd .build/lin.gcc.shared.x64                                                                  
-  
-  ls ~/el_conf/.build/lin.gcc.shared.x64/ 2>/dev/null                                                                                 
-  find ~/el_conf -name "1.sh" -o -name "build.sh" 2>/dev/null | head                                                                  
-                                                                                                                                      
-  Если есть 1.sh — запускай его. Если нет — стандартное:                                                                              
-  cmake -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchains/linux_x86_64.cmake \                                                            
-        -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON ../..  
+NUGET_DIR="${NUGET_DIR:-$HOME/.nuget/packages}"
+EL_CONF_DIR="${EL_CONF_DIR:-$HOME/el_conf}"
 
+# Найти CMakeLists.var для конкретной пары pkg+version в NuGet-кэше.
+find_var_file() {
+    local pkg="$1"
+    local ver="$2"
+    find "$NUGET_DIR" -path "*${pkg}.lin.*/${ver}/CMakeLists.var" 2>/dev/null | head -1
+}
 
-#!/bin/bash                                                                                                                         
-  # Использование: source /tmp/setup_protoc_env.sh                                                                                    
-                                                                                                                                      
-  # 1. Собрать LD_LIBRARY_PATH из всех conan package folder'ов
-  LD_PATHS=""                                                                                                                         
-  for d in /home/user/.conan2/p/b/*/p/lib; do                                                                                         
-      [ -d "$d" ] && LD_PATHS="$d:$LD_PATHS"
-  done                                                                                                                                
-                                                                                                                                    
-  if [ -z "$LD_PATHS" ]; then                                                                                                         
-      echo "ERROR: conan package folders not found in /home/user/.conan2/p/b/*/p/lib"                                               
-      return 1 2>/dev/null || exit 1                                                                                                  
-  fi
-                                                                                                                                      
-  export LD_LIBRARY_PATH="${LD_PATHS}${LD_LIBRARY_PATH}"                                                                              
-   
-  echo "=== LD_LIBRARY_PATH dirs (first 10): ==="                                                                                     
-  echo "$LD_LIBRARY_PATH" | tr ':' '\n' | head -10                                                                                  
-  echo                                                                                                                                
-   
-  # 2. Проверить grpc_cpp_plugin                                                                                                      
-  echo "=== grpc_cpp_plugin ==="                                                                                                    
-  if [ -x ~/bin/grpc_cpp_plugin ]; then                                                                                               
-      missing=$(ldd ~/bin/grpc_cpp_plugin 2>&1 | grep "not found")
-      if [ -z "$missing" ]; then                                                                                                      
-          echo "OK: все зависимости найдены"                                                                                        
-      else                                                                                                                            
-          echo "MISSING:"                                                                                                           
-          echo "$missing"                                                                                                             
-      fi
-  else                                                                                                                                
-      echo "WARN: ~/bin/grpc_cpp_plugin не найден"                                                                                  
-  fi
-  echo                                                                                                                                
-  
-  # 3. Проверить protoc                                                                                                               
-  echo "=== protoc ==="                                                                                                             
-  if [ -x ~/bin/protoc ]; then
-      missing_protoc=$(ldd ~/bin/protoc 2>&1 | grep "not found")
-      if [ -z "$missing_protoc" ]; then                                                                                               
-          echo "OK: все зависимости найдены"
-          ~/bin/protoc --version                                                                                                      
-      else                                                                                                                            
-          echo "MISSING:"
-          echo "$missing_protoc"                                                                                                      
-      fi                                                                                                                            
-  else
-      echo "WARN: ~/bin/protoc не найден"
-  fi                                                                                                                                  
-  echo
-                                                                                                                                      
-  # 4. PATH                                                                                                                         
-  export PATH=~/bin:$PATH
-  echo "=== PATH: ==="
-  which protoc                                                                                                                        
-  which grpc_cpp_plugin
+# Извлечь блок _dependencies из CMakeLists.var, по одной "name:version" на строку.
+extract_deps() {
+    local var_file="$1"
+    [ -f "$var_file" ] || return 0
+    awk '
+        /set\(\$\{project_name\}_dependencies/ { in_block=1; next }
+        in_block && /^[[:space:]]*\)/ { in_block=0; exit }
+        in_block {
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "")
+            if (length($0) > 0) print
+        }
+    ' "$var_file"
+}
+
+# Flat view: каждый закэшированный pkg → его _dependencies блок.
+deps_flat() {
+    echo "========================================="
+    echo "Flat dependency map of $NUGET_DIR"
+    echo "========================================="
+    echo
+    local var_file
+    for var_file in $(find "$NUGET_DIR" -name CMakeLists.var 2>/dev/null | sort); do
+        # путь вида: <root>/<pkg>.lin.gcc84.shared.x86_64/<ver>/CMakeLists.var
+        local rel="${var_file#$NUGET_DIR/}"
+        local pkg_dir="${rel%%/*}"
+        local pkg_name="${pkg_dir%%.lin.*}"
+        local rest="${rel#$pkg_dir/}"
+        local pkg_ver="${rest%%/*}"
+
+        echo "=== ${pkg_name}:${pkg_ver} ==="
+        local deps
+        deps=$(extract_deps "$var_file")
+        if [ -z "$deps" ]; then
+            echo "    (no dependencies)"
+        else
+            echo "$deps" | sed 's/^/    /'
+        fi
+        echo
+    done
+}
+
+# Рекурсивное дерево от заданной точки pkg+version.
+# Args: pkg_name pkg_ver indent seen_list
+deps_tree() {
+    local pkg="$1"
+    local ver="$2"
+    local prefix="${3:-}"
+    local seen="${4:-}"
+
+    echo "${prefix}${pkg}:${ver}"
+
+    case "$seen" in
+        *"|${pkg}:${ver}|"*)
+            echo "${prefix}    └── (already shown — cycle or duplicate)"
+            return
+            ;;
+    esac
+    seen="${seen}|${pkg}:${ver}|"
+
+    local var_file
+    var_file=$(find_var_file "$pkg" "$ver")
+    if [ -z "$var_file" ] || [ ! -f "$var_file" ]; then
+        echo "${prefix}    └── (NOT IN CACHE)"
+        return
+    fi
+
+    local deps
+    deps=$(extract_deps "$var_file")
+    [ -z "$deps" ] && return
+
+    while IFS= read -r dep; do
+        [ -z "$dep" ] && continue
+        local name="${dep%%:*}"
+        local v="${dep##*:}"
+        deps_tree "$name" "$v" "${prefix}    " "$seen"
+    done <<< "$deps"
+}
+
+# Поиск transitive deps, блокирующих миграцию на conan-pkg:
+# protobuf 4.x, openssl 1.1.x, zlib 1.3.0
+deps_outdated() {
+    echo "========================================="
+    echo "Outdated transitive deps blocking migration"
+    echo "========================================="
+    echo "(searching in $NUGET_DIR)"
+    echo
+    find "$NUGET_DIR" -name CMakeLists.var 2>/dev/null \
+        | xargs grep -HE "protobuf:[0-9]|openssl:[0-9]|zlib:[0-9]" 2>/dev/null \
+        | grep -E ":4\.|:1\.1\.|zlib:1\.3\.0" \
+        | sed "s|${NUGET_DIR}/||g"
+}
+
+# Top-level зависимости el_conf из его CMakeLists.var в репо-сорсах.
+deps_el_conf_top() {
+    local var_file="${EL_CONF_DIR}/CMakeLists.var"
+    echo "========================================="
+    echo "el_conf top-level dependencies"
+    echo "========================================="
+    echo "(from $var_file)"
+    echo
+    if [ ! -f "$var_file" ]; then
+        echo "    NOT FOUND: $var_file"
+        return
+    fi
+    extract_deps "$var_file" | sed 's/^/    /'
+}
+
+# Полный отчёт: top deps + flat-карта + деревья по ключевым корням + outdated.
+full_report() {
+    echo "==============================================="
+    echo "Legacy NuGet migration dependency report"
+    echo "Generated: $(date)"
+    echo "Host:      $(hostname)"
+    echo "NuGet dir: $NUGET_DIR"
+    echo "==============================================="
+    echo
+
+    deps_el_conf_top
+    echo
+
+    deps_flat
+    echo
+
+    echo "========================================="
+    echo "Trees for key roots"
+    echo "========================================="
+    echo
+    local entry
+    for entry in \
+            "grpc_sdk:1.2.0" \
+            "cs_system_data:1.132.0" \
+            "cs_service_sdk:3.16.0" \
+            "mosquitto:2.0.19" \
+            "sura_proto:7.7.0" \
+            "gsd_parser:0.15.0" \
+            "ipc_factories_grpc:2.12.0" \
+            "service_sdk:3.9.0"; do
+        local name="${entry%%:*}"
+        local ver="${entry##*:}"
+        echo "### Tree: ${name}:${ver}"
+        deps_tree "$name" "$ver"
+        echo
+    done
+
+    deps_outdated
+}
+
+main() {
+    local cmd="${1:-full}"
+    case "$cmd" in
+        full)
+            full_report
+            ;;
+        flat)
+            deps_flat
+            ;;
+        tree)
+            local pkg="${2:-}"
+            local ver="${3:-}"
+            if [ -z "$pkg" ] || [ -z "$ver" ]; then
+                echo "Usage: $0 tree <pkg_name> <version>" >&2
+                exit 1
+            fi
+            deps_tree "$pkg" "$ver"
+            ;;
+        outdated)
+            deps_outdated
+            ;;
+        *)
+            echo "Usage: $0 [full|flat|tree <pkg> <ver>|outdated]" >&2
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"
