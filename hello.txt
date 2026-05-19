@@ -1,28 +1,11 @@
-for f in libabsl_*.so; do                                                                                                           
-      short="lib${f#libabsl_}"                                                                                                      
-      [ -e "$short" ] || ln -sf "$f" "$short"                                                                                         
-  done                                                                                                                              
-  # симметрично для -d/ каталога                                                                                                      
-  cd /tmp/abseil.lin.gcc84.shared.x86_64.*/lib/native/lin-gcc84-shared-x86_64-d                                                       
-  for f in libabsl_*.so; do
-      short="lib${f#libabsl_}"                                                                                                        
-      [ -e "$short" ] || ln -sf "$f" "$short"                                                                                       
-  done                                                                                                                                
-                                                                                                                                    
-  # zlib: libzlib.so → libz.so                                                                                                        
-  for d in /tmp/zlib.lin.gcc84.shared.x86_64.*/lib/native/lin-gcc84-shared-x86_64{,-d}; do
-      [ -d "$d" ] || continue                                                                                                         
-      cd "$d"                                                                                                                       
-      [ -e libzlib.so ] || ln -sf libz.so libzlib.so 2>/dev/null || ln -sf libz.so.* libzlib.so                                       
-  done                                                                                                                                
-   
-  # upb: попробовать симлинк на один из upb*.so                                                                                       
-  for d in /tmp/grpc.lin.gcc84.shared.x86_64.*/lib/native/lin-gcc84-shared-x86_64{,-d}; do                                          
-      [ -d "$d" ] || continue                                                                                                         
-      cd "$d"                                                                                                                       
-      [ -e libupb.so ] || ln -sf libupb_base_lib.so libupb.so 2>/dev/null                                                             
-  done    
-
+ mkdir -p .build/lin.gcc.shared.x64 && cd .build/lin.gcc.shared.x64                                                                  
+  
+  ls ~/el_conf/.build/lin.gcc.shared.x64/ 2>/dev/null                                                                                 
+  find ~/el_conf -name "1.sh" -o -name "build.sh" 2>/dev/null | head                                                                  
+                                                                                                                                      
+  Если есть 1.sh — запускай его. Если нет — стандартное:                                                                              
+  cmake -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchains/linux_x86_64.cmake \                                                            
+        -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON ../..  
 
 
 #!/bin/bash                                                                                                                         
