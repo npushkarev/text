@@ -1,15 +1,13 @@
- PROTOC_BIN=$(find ~/.conan2/p -name protoc -type f | head -1)                                                                       
-  GRPC_BIN=$(find ~/.conan2/p -name grpc_cpp_plugin -type f | head -1)                                                                
-  sudo cp "$PROTOC_BIN" /usr/local/bin/protoc                                                                                       
-  sudo cp "$GRPC_BIN" /usr/local/bin/grpc_cpp_plugin                                                                                  
-  sudo chmod +x /usr/local/bin/protoc /usr/local/bin/grpc_cpp_plugin                                                                
-  which protoc && protoc --version   # проверка                                                                                       
+PROTOC=/home/user/.conan2/p/b/proto30f5e22c4e615/p/bin/protoc   # либо тот что показал libprotoc 29.6                               
+  GRPC_PLUGIN=/home/user/.conan2/p/b/grpc.../p/bin/grpc_cpp_plugin  # подставишь после find                                           
                                                                                                                                       
-  После этого:                                                                                                                        
-  cd /tmp/grpc_sdk/.build/lin.gcc.shared.x64                                                                                          
-  rm -rf CMake* proto/                                                                                                              
-  bash 1.sh                                                                                                                           
-  cmake --build .                                    
+  mkdir -p ~/bin                                                                                                                      
+  cp "$PROTOC" ~/bin/protoc                                                                                                           
+  cp "$GRPC_PLUGIN" ~/bin/grpc_cpp_plugin                                                                                             
+  chmod +x ~/bin/protoc ~/bin/grpc_cpp_plugin
+                                                                                                                                      
+  export PATH=~/bin:$PATH                                                                                                           
+  which protoc && protoc --version    # должно показать ~/bin/protoc и 29.6                                                                                       
 
 add_definitions(-D${_name_definition}_${_component_name_definition}_${_type}_DEFINE)
 
