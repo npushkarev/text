@@ -1,3 +1,30 @@
+for f in libabsl_*.so; do                                                                                                           
+      short="lib${f#libabsl_}"                                                                                                      
+      [ -e "$short" ] || ln -sf "$f" "$short"                                                                                         
+  done                                                                                                                              
+  # симметрично для -d/ каталога                                                                                                      
+  cd /tmp/abseil.lin.gcc84.shared.x86_64.*/lib/native/lin-gcc84-shared-x86_64-d                                                       
+  for f in libabsl_*.so; do
+      short="lib${f#libabsl_}"                                                                                                        
+      [ -e "$short" ] || ln -sf "$f" "$short"                                                                                       
+  done                                                                                                                                
+                                                                                                                                    
+  # zlib: libzlib.so → libz.so                                                                                                        
+  for d in /tmp/zlib.lin.gcc84.shared.x86_64.*/lib/native/lin-gcc84-shared-x86_64{,-d}; do
+      [ -d "$d" ] || continue                                                                                                         
+      cd "$d"                                                                                                                       
+      [ -e libzlib.so ] || ln -sf libz.so libzlib.so 2>/dev/null || ln -sf libz.so.* libzlib.so                                       
+  done                                                                                                                                
+   
+  # upb: попробовать симлинк на один из upb*.so                                                                                       
+  for d in /tmp/grpc.lin.gcc84.shared.x86_64.*/lib/native/lin-gcc84-shared-x86_64{,-d}; do                                          
+      [ -d "$d" ] || continue                                                                                                         
+      cd "$d"                                                                                                                       
+      [ -e libupb.so ] || ln -sf libupb_base_lib.so libupb.so 2>/dev/null                                                             
+  done    
+
+
+
 #!/bin/bash                                                                                                                         
   # Использование: source /tmp/setup_protoc_env.sh                                                                                    
                                                                                                                                       
