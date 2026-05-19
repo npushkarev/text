@@ -1,8 +1,15 @@
-PROTOC=/home/user/.conan2/p/b/proto30f5e22c4e615/p/bin/protoc   # либо тот что показал libprotoc 29.6                               
-  GRPC_PLUGIN=/home/user/.conan2/p/b/grpc.../p/bin/grpc_cpp_plugin  # подставишь после find                                           
-GRPC_PLUGIN=$(find /home/user/.conan2/p -name grpc_cpp_plugin -type f 2>/dev/null | grep "p/bin/" | head -1)                        
-  echo "Found: $GRPC_PLUGIN"                                               
-                                                                                                                                                                                                                            
+cp "$GRPC_PLUGIN" ~/bin/grpc_cpp_plugin                                                                                             
+  chmod +x ~/bin/grpc_cpp_plugin                                                                                                    
+  ls -la ~/bin/                                                                                                                       
+  # должны быть protoc и grpc_cpp_plugin, оба executable                                                                            
+                                                                                                                                      
+  Затем запускай build:
+                                                                                                                                      
+  export PATH=~/bin:$PATH                                                                                                           
+  which protoc && protoc --version   # должно быть ~/bin/protoc и libprotoc 29.6                                                      
+  
+  cd /tmp/grpc_sdk/.build/lin.gcc.shared.x64 
+
   mkdir -p ~/bin                                                                                                                      
   cp "$PROTOC" ~/bin/protoc                                                                                                           
   cp "$GRPC_PLUGIN" ~/bin/grpc_cpp_plugin                                                                                             
