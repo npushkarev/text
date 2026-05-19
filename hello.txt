@@ -1,3 +1,7 @@
+ grep -n "protobuf:4" /tmp/*.lin.gcc84.shared.x86_64.*/CMakeLists.var 2>/dev/null                                                  
+  grep -n "openssl:1" /tmp/*.lin.gcc84.shared.x86_64.*/CMakeLists.var 2>/dev/null 
+  grep -n "zlib:1.3.0" /tmp/*.lin.gcc84.shared.x86_64.*/CMakeLists.var ~/el_conf/CMakeLists.var 2>/dev/null
+
  mkdir -p .build/lin.gcc.shared.x64 && cd .build/lin.gcc.shared.x64                                                                  
   
   ls ~/el_conf/.build/lin.gcc.shared.x64/ 2>/dev/null                                                                                 
