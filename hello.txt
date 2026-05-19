@@ -1,4 +1,4 @@
- find ~/el_conf -maxdepth 3 -name "*.lin.gcc84.shared.x86_64.*" -type d 2>/dev/null | head  
+find /home/user -name "CMakeLists.var" -exec grep -l "protobuf:4\.25" {} \; 2>/dev/null      
 
  mkdir -p .build/lin.gcc.shared.x64 && cd .build/lin.gcc.shared.x64                                                                  
   
