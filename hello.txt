@@ -1,19 +1,5 @@
-echo "=== 1. Что сейчас в legacy/zlib/conanfile.py generate() ==="                                                                                                                                          
-  sed -n '/def generate/,/tc\.generate/p' ~/conan-master/legacy/zlib/conanfile.py                                                                                                                             
-                                                                                                                                                                                                              
-  echo                                                                                                                                                                                                        
-  echo "=== 2. PlatformHelper.cmake вокруг :86 (где падает if STREQUAL) ==="                                                                                                                                  
-  mkdir -p /tmp/zinsp && rm -rf /tmp/zinsp/* && tar xzf ~/conan-master/legacy/zlib/src/zlib-1.3.0.tar.gz -C /tmp/zinsp                                                                                        
-  sed -n '70,100p' /tmp/zinsp/zlib-1.3.0/cmake/PlatformHelper.cmake                                                                                                                                           
-                                                                                                                                                                                                              
-  echo                                                                                                                                                                                                        
-  echo "=== 3. PlatformHelper.cmake вокруг :222 (get_platform_prefix) ==="                                                                                                                                    
-  sed -n '210,230p' /tmp/zinsp/zlib-1.3.0/cmake/PlatformHelper.cmake                                                                                                                                          
-                                                                                                                                                                                                              
-  echo                                                                                                                                                                                                        
-  echo "=== 4. InstallComponent.cmake :15-30 (get_folder_suffix call) ==="                                                                                                                                    
-  sed -n '13,32p' /tmp/zinsp/zlib-1.3.0/cmake/InstallComponent.cmake
-
+ docker run --rm -v conan-cache-legacy-x86_64:/root/.conan2 grpc-tc-mirror \                                                                                       
+      bash -c "find /root/.conan2/p -path '*/absl/base/options.h' -exec grep ABSL_OPTION_INLINE_NAMESPACE_NAME {} \;"      
 #!/bin/bash
 #
 # deps_report.sh — отчёт по дереву зависимостей legacy NuGet пакетов.
