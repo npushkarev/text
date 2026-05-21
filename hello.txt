@@ -1,4 +1,10 @@
-  include_directories(${project_include_dirs})
+ docker run --rm \
+      -v "$HOME/conan-master":/work/conan-recipes \
+      -v conan-cache-grpc-1601-upstream:/root/.conan2 \
+      --entrypoint conan grpc-tc-mirror:0.1.0 \
+      remove 'protobuf/4.25.2:*' -c
+
+include_directories(${project_include_dirs})
   message(STATUS "[DEBUG] project_include_dirs=[${project_include_dirs}]")
   message(STATUS "[DEBUG] crossplatform_INCLUDE_DIRS=[${crossplatform_INCLUDE_DIRS}]")
 
