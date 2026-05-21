@@ -1,3 +1,7 @@
+rm -rf ~/abseil.lin.gcc84.shared.x86_64.20240116.2.1/
+  rm -rf ~/absl.lin.gcc84.shared.x86_64.0.2.0/ 
+
+
 ls ~/abseil.lin.gcc84.shared.x86_64.20240116.2.1/lib/native/*/  2>/dev/null | grep -i cord
 
 
