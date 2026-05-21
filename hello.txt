@@ -1,14 +1,5 @@
-docker run --rm 
-      -v conan-cache-grpc-1601-upstream:/root/.conan2 
-      --entrypoint bash grpc-tc-mirror:0.1.0 -c '
-          echo "=== conan home ==="
-          conan config home
-          echo "=== protobuf BEFORE ==="
-          conan list "protobuf/*"
-          echo "=== removing protobuf ==="
-          conan remove "protobuf/*" -c
-          echo "=== protobuf AFTER ==="
-          conan list "protobuf/*"
+⏺ docker run --rm -v conan-cache-grpc-1601-upstream:/root/.conan2 --entrypoint bash grpc-tc-mirror:0.1.0 -c 'echo "=== conan home ==="; conan config home; echo "===
+   protobuf BEFORE ==="; conan list "protobuf/*"; echo "=== removing ==="; conan remove "protobuf/*" -c; echo "=== protobuf AFTER ==="; conan list "protobuf/*"'
 
 include_directories(${project_include_dirs})
   message(STATUS "[DEBUG] project_include_dirs=[${project_include_dirs}]")
