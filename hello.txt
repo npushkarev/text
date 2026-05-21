@@ -1,3 +1,5 @@
+grep -n "debug_suffix" ~/conan-master/test-astra/run_grpc_1601_upstream.sh
+
 CACHE_VOLUME=conan-cache-1601-v2 LEGACY_NUPKG_VERSION_SUFFIX=.1 ~/conan-master/test-astra/run_grpc_1601_upstream.sh
 
 include_directories(${project_include_dirs})
