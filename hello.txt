@@ -1,3 +1,5 @@
+ls ~/absl.lin.gcc84.shared.x86_64.0.2.0/lib/native/lin-gcc84-shared-x86_64/ | grep -i cord
+
  cat ~/grpc_sdk/.build/lin.gcc.shared.x64/grpc_sdk/CMakeFiles/grpc_sdk_test.dir/link.txt | tr ' ' '\n' | grep -E '^-l|zlib|absl|grpc'
 
 
