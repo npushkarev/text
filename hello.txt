@@ -1,4 +1,20 @@
- docker run --rm -v conan-cache-legacy-x86_64:/root/.conan2 grpc-tc-mirror \                                                                                       
+if(NOT "${${project_name}_dependencies}" STREQUAL "")
+          message(STATUS "Find dependencies for ${_name}")
+          set(_unseen_deps "")
+          foreach(_d ${${project_name}_dependencies})
+              if(NOT _d IN_LIST __resolve_deps_visited_global)
+                  list(APPEND _unseen_deps ${_d})
+                  list(APPEND __resolve_deps_visited_global ${_d})
+              endif()
+          endforeach()
+          set(__resolve_deps_visited_global
+              "${__resolve_deps_visited_global}"
+              CACHE INTERNAL "deps already processed by resolve_dependencies")
+          if(NOT "${_unseen_deps}" STREQUAL "")
+              resolve_dependencies(DEPENDENCIES ${_unseen_deps})
+          endif()
+      endif()
+docker run --rm -v conan-cache-legacy-x86_64:/root/.conan2 grpc-tc-mirror \                                                                                       
       bash -c "find /root/.conan2/p -path '*/absl/base/options.h' -exec grep ABSL_OPTION_INLINE_NAMESPACE_NAME {} \;"      
 #!/bin/bash
 #
