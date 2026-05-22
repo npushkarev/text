@@ -1,3 +1,9 @@
+cd ~
+  for v in $(find . -name CMakeLists.var 2>/dev/null); do
+      line=$(grep -i 'zlib:' "$v")
+      [ -n "$line" ] && echo "$v -> $line"
+  done
+
 unzip -p output-grpc-1601-upstream/zlib.*.nupkg CMakeLists.var | grep -A3 'set(components'
 
 
