@@ -1,3 +1,6 @@
+export LD_LIBRARY_PATH=$(find ~ -maxdepth 4 -type d -path '*/lib/native/lin-gcc84-shared-x86_64' 2>/dev/null | tr '\n' ':')$LD_LIBRARY_PATH
+ ./bin/grpc_sdk_test
+
   # 1. что реально лежит в grpc-nupkg:
   ls ~/grpc.lin.gcc84.shared.x86_64.1.60.1.1/lib/native/lin-gcc84-shared-x86_64/ | grep -E 'upb|utf8|unsecure'
 
