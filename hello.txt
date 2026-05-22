@@ -1,20 +1,14 @@
-set -euo pipefail
-  if [ $# -lt 1 ]; then echo "Usage: $0 <utf8_range-nupkg-path>"; exit 1; fi
-  IN_NUPKG="$1"
-  OLD_VER="0.1.0"; NEW_VER="0.1.0.1"
-  OLD_DEP="absl:0.2.0"; NEW_DEP="absl:0.2.0.1"
-  OUT="$(pwd)/utf8_range.lin.gcc84.shared.x86_64.${NEW_VER}.nupkg"
-  W=$(mktemp -d); trap 'rm -rf "$W"' EXIT
-  unzip -q "$IN_NUPKG" -d "$W"
-  sed -i "s|${OLD_DEP}|${NEW_DEP}|g" "$W/CMakeLists.var"
-  NSP=$(find "$W" -maxdepth 1 -name "*.nuspec" | head -1)
-  [ -n "$NSP" ] && sed -i "s|<version>${OLD_VER}</version>|<version>${NEW_VER}</version>|; s|id=\"absl\" version=\"0\.2\.0\"|id=\"absl\" version=\"0.2.0.1\"|"
-  "$NSP"
-  rm -f "$OUT"; (cd "$W" && zip -qr "$OUT" .)
-  echo "[DONE] $OUT"
-  unzip -p "$OUT" CMakeLists.var | grep -A3 _dependencies
-  EOF
-  chmod +x ~/conan-master/test-astra/patch_utf8_range_dep.sh
+  Что выяснить — 3 команды
+  
+  # 1. что реально лежит в lib у нового absl и КАК называются файлы
+  ls -lR ~/absl.lin.gcc84.shared.x86_64.0.2.0.1/lib
+
+  # 2. как уложен СТАРЫЙ legacy absl — эталон раскладки, под который писан резолвер
+  ls -lR ~/absl.lin.gcc84.shared.x86_64.0.2.0/lib
+
+  # 3. какие -L / -l реально на линк-строке
+  cd ~/grpc_sdk/.build/lin.gcc.shared.x64
+  tr ' ' '\n' < grpc_sdk/CMakeFiles/grpc_sdk_test.dir/link.txt | grep -E '^-[Ll]'
 
 
 rm -rf ~/abseil.lin.gcc84.shared.x86_64.20240116.2.1/
