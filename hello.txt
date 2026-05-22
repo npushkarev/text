@@ -1,3 +1,12 @@
+
+  # 1. что лежит в zlib-пакете — есть ли libzlib.so рядом с libz.so
+  ls -la /home/user/zlib.*/lib/native/*/
+
+  # 2. какой версией zlib прописан в grpc — по ней решаем суффикс
+  grep -i zlib /home/user/grpc.*/CMakeLists.var
+
+
+
 # 1. точная линк-строка тест-экзешника
   cat grpc_sdk/CMakeFiles/grpc_sdk_test.dir/link.txt
 
