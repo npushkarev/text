@@ -1,3 +1,9 @@
+for f in $(find ~/el_conf ~ -name 'lib*.a' 2>/dev/null | grep -E 'native|el_conf'); do
+    tags=$(nm -C "$f" 2>/dev/null | grep -oE 'lts_20[0-9]{6}' | sort -u | tr '\n' ' ')
+    [ -n "$tags" ] && echo "$tags  <- $f"
+  done
+
+
 export LD_LIBRARY_PATH=$(find ~ -maxdepth 4 -type d -path '*/lib/native/lin-gcc84-shared-x86_64' 2>/dev/null | tr '\n' ':')$LD_LIBRARY_PATH
  ./bin/grpc_sdk_test
 
