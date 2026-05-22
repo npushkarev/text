@@ -1,9 +1,14 @@
- A=~/absl.lin.gcc84.shared.x86_64.0.2.0/lib/native/lin-gcc84-shared-x86_64
-  echo "--- cord-символы в libstrings.a:"
-  nm -C "$A/libstrings.a" 2>/dev/null | grep -c -i cord
-  nm -C "$A/libstrings.a" 2>/dev/null | grep -i 'CordzUpdateTracker\|CordRepExternal\|::Cord(' | head
-  echo "--- inline-namespace тег:"
-  nm "$A/libstrings.a" 2>/dev/null | grep -oE 'lts_[0-9]+' | sort -u
+# 1. точная линк-строка тест-экзешника
+  cat grpc_sdk/CMakeFiles/grpc_sdk_test.dir/link.txt
+
+  # 2. есть ли вообще -L и какие -l
+  grep -oE '\-L[^ ]+'              grpc_sdk/CMakeFiles/grpc_sdk_test.dir/link.txt | sort -u
+  grep -oE '\-l[A-Za-z0-9_.+-]+'   grpc_sdk/CMakeFiles/grpc_sdk_test.dir/link.txt | sort -u
+
+  # 3. где реально лежит libzlib.* / libz.* из резолвнутого пакета
+  find ~/grpc_sdk -name 'libzlib*' -o -name 'libz.so*' 2>/dev/null
+
+
 
 
   Что выяснить — 3 команды
