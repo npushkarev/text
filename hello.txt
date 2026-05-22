@@ -1,3 +1,11 @@
+ A=~/absl.lin.gcc84.shared.x86_64.0.2.0/lib/native/lin-gcc84-shared-x86_64
+  echo "--- cord-символы в libstrings.a:"
+  nm -C "$A/libstrings.a" 2>/dev/null | grep -c -i cord
+  nm -C "$A/libstrings.a" 2>/dev/null | grep -i 'CordzUpdateTracker\|CordRepExternal\|::Cord(' | head
+  echo "--- inline-namespace тег:"
+  nm "$A/libstrings.a" 2>/dev/null | grep -oE 'lts_[0-9]+' | sort -u
+
+
   Что выяснить — 3 команды
   
   # 1. что реально лежит в lib у нового absl и КАК называются файлы
