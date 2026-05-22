@@ -1,8 +1,10 @@
-cd ~
-  for v in $(find . -name CMakeLists.var 2>/dev/null); do
-      line=$(grep -i 'zlib:' "$v")
-      [ -n "$line" ] && echo "$v -> $line"
-  done
+  # 1. что реально лежит в grpc-nupkg:
+  ls ~/grpc.lin.gcc84.shared.x86_64.1.60.1.1/lib/native/lin-gcc84-shared-x86_64/ | grep -E 'upb|utf8|unsecure'
+
+  # 2. собрал ли их вообще conan (есть ли в кэше):
+  find ~/.conan2/p -name 'libupb_collections_lib.so*' -o -name 'libutf8_range_lib.so*' 2>/dev/null
+
+
 
 unzip -p output-grpc-1601-upstream/zlib.*.nupkg CMakeLists.var | grep -A3 'set(components'
 
