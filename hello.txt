@@ -1,3 +1,5 @@
+unzip -p output-grpc-1601-upstream/zlib.*.nupkg CMakeLists.var | grep -A3 'set(components'
+
 
   # 1. что лежит в zlib-пакете — есть ли libzlib.so рядом с libz.so
   ls -la /home/user/zlib.*/lib/native/*/
