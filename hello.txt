@@ -1,7 +1,4 @@
-sed -n '1,30p' ~/el_conf/sura_connector_client/CMakeLists.txt
-
-  # 2. Что в CMakeCommon.cmake около строки 150 (где идёт вызов protobuf_generate_grpc_cpp)
-  sed -n '130,170p' ~/el_conf/cmake/CMakeCommon.cmake
+ cat ~/el_conf/sura_connector_client/CMakeLists.var
 
 
 
