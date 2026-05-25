@@ -1,3 +1,7 @@
+cmake -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchains/linux_x86_64.cmake \
+        -DVALIDATION=OFF -DCOVERAGE=ON \
+        -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=ON \
+        -DBUILD_RELEASE=NO ../..
 
   # 2. Что просит grpc_sdk
   grep -E 'absl' ~/grpc_sdk/CMakeLists.var ~/grpc_sdk/**/CMakeLists.var 2>/dev/null
