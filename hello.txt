@@ -1,6 +1,4 @@
- grep -rEn 'TYPED_TEST|class GRPCService\b|class GrpcServiceTcp|class GrpcServiceUnix' \
-    --include='*.cpp' --include='*.h' --include='*.cc' .
-./bin/grpc_sdk_test --gtest_filter='-GrpcServiceTcp/*'
+ find ~ -name 'googletest*.nupkg' -path '*Bitbucket*' -o -path '*legacy*' 2>/dev/null
 
 for f in $(find ~/el_conf ~ -name 'lib*.a' 2>/dev/null | grep -E 'native|el_conf'); do
     tags=$(nm -C "$f" 2>/dev/null | grep -oE 'lts_20[0-9]{6}' | sort -u | tr '\n' ' ')
