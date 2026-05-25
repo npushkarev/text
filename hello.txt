@@ -1,3 +1,10 @@
+sed -n '1,30p' ~/el_conf/sura_connector_client/CMakeLists.txt
+
+  # 2. Что в CMakeCommon.cmake около строки 150 (где идёт вызов protobuf_generate_grpc_cpp)
+  sed -n '130,170p' ~/el_conf/cmake/CMakeCommon.cmake
+
+
+
  ls /home/user/protobuf.lin.gcc84.shared.x86_64.4.25.2.1/proto/google/protobuf/ 2>/dev/null
 
  find /home/user -path '*/absl/base/options.h' 2>/dev/null
