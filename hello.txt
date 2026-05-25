@@ -1,4 +1,20 @@
-  rm -rf /home/user/protobuf.lin.gcc84.shared.x86_64.4.25.2.1/proto
+nm -C /home/user/absl.lin.gcc84.shared.x86_64.0.2.0.1/lib/native/lin-gcc84-shared-x86_64-d/liblog.a 2>/dev/null \
+      | grep -E 'CheckOpMessageBuilder|LogMessageFatal|MakeCheckOpString' | head -10
+
+  # 2. Есть ли в Release-варианте (на всякий)
+  nm -C /home/user/absl.lin.gcc84.shared.x86_64.0.2.0.1/lib/native/lin-gcc84-shared-x86_64/liblog.a 2>/dev/null \
+      | grep -E 'CheckOpMessageBuilder|LogMessageFatal|MakeCheckOpString' | head -10
+
+  # 3. На какой liblog.a реально указывает CMakeCache в el_conf
+  grep -E 'log_LIBRARY' ~/el_conf/.build/lin.gcc.shared.x64/CMakeCache.txt | head -4
+
+  # 4. Какие ВСЕ liblog.a есть в /home/user/
+  find /home/user -maxdepth 4 -name 'liblog.a' 2>/dev/null
+
+
+
+
+rm -rf /home/user/protobuf.lin.gcc84.shared.x86_64.4.25.2.1/proto
   mkdir -p /home/user/protobuf.lin.gcc84.shared.x86_64.4.25.2.1/proto/google/protobuf
   cp ~/temp/proto_dontwork/google/protobuf/*.proto \
      /home/user/protobuf.lin.gcc84.shared.x86_64.4.25.2.1/proto/google/protobuf/
