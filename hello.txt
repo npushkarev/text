@@ -1,4 +1,4 @@
-find /home/user/protobuf.lin.gcc84.shared.x86_64.4.25.2.1 -path '*absl*' -name '*.h' 2>/dev/null | head
+ ls /home/user/protobuf.lin.gcc84.shared.x86_64.4.25.2.1/proto/google/protobuf/ 2>/dev/null
 
  find /home/user -path '*/absl/base/options.h' 2>/dev/null
 
