@@ -1,3 +1,11 @@
+./bin/grpc_sdk_test --gtest_filter='-GrpcServiceTcp/*:-GrpcServiceUnix/*'
+
+
+ cd ~/grpc_sdk
+  grep -rn --include='*.cpp' --include='*.h' \
+    -E 'class GRPCService|struct GRPCService|TYPED_TEST_SUITE_P?\b|TYPED_TEST\(GrpcService(Tcp|Unix)' tests/
+
+
 ./bin/grpc_sdk_test --gtest_filter='-GrpcServiceTcp/*'
 
 for f in $(find ~/el_conf ~ -name 'lib*.a' 2>/dev/null | grep -E 'native|el_conf'); do
