@@ -1,3 +1,8 @@
+find /home/user -maxdepth 3 -name CMakeLists.var 2>/dev/null | xargs grep -l 'absl' 2>/dev/null | while read f; do
+      echo "=== $f ==="
+      grep -nE 'absl' "$f"
+  done
+
 grep -rn 'absl:0\.2\.0' ~/grpc_sdk --include=CMakeLists.var --include=CMakeLists.txt
 
 cmake -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchains/linux_x86_64.cmake \
