@@ -1,15 +1,14 @@
-# 1. Что вообще лежит в нашем coarse liblog.a (.o файлы)
-  ar t /home/user/absl.lin.gcc84.shared.x86_64.0.2.0.1/lib/native/lin-gcc84-shared-x86_64-d/liblog.a 2>/dev/null
 
-  # 2. Может символ определён в другой нашей .a (не log)?
-  for f in /home/user/absl.lin.gcc84.shared.x86_64.0.2.0.1/lib/native/lin-gcc84-shared-x86_64-d/*.a; do
-      if nm -C "$f" 2>/dev/null | grep -E "^[0-9a-f]+ [TVW] absl::.*LogMessageFatal::LogMessageFatal\(char const\*, int\)" >/dev/null; then
-          echo "DEFINED in: $f"
-      fi
-  done
-  
-  # 3. Что в lib/ source-сборки conan'а реально есть (чтобы понять что было ВХОДОМ агрегации)
-  find /home/user/.conan2/p -path '*abseil*' -name 'libabsl_log_internal*.a' 2>/dev/null | head -10
+  # 1. Какие CMakeLists.var в el_conf и какие у них component_type
+  grep -rH 'component_type' ~/el_conf --include='CMakeLists.var' 2>/dev/null
+
+  # 2. Найти тот что executable
+  grep -rl 'component_type executable' ~/el_conf --include='CMakeLists.var' 2>/dev/null
+
+  # 3. Когда нашёл — покажи весь target_libraries блок
+  # Допустим это ~/el_conf/el_conf/CMakeLists.var:
+  grep -A50 'set(target_libraries' ~/el_conf/<executable-component>/CMakeLists.var
+
 
 
 
