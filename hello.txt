@@ -1,23 +1,11 @@
- # 1. КАК линкуется grpc_sdk_test: ищем дублирование .a в командной строке
-  make grpc_sdk_test VERBOSE=1 2>&1 | grep -E 'g\+\+.*grpc_sdk_test\b' | tail -3
+ cat grpc_sdk/CMakeFiles/grpc_sdk_test.dir/link.txt | tr ' ' '\n' | grep -E '\.a$|\.so|--whole-archive|--no-whole-archive'
 
-  # 2. что внутри НАШИХ libgtest.a / libgmock.a — есть ли gtest-объекты в gmock?
-  NUPKG=$(find ~ -name 'libgmock.a' -path '*googletest*lib/native*' 2>/dev/null | head -1)
-  echo "=== libgmock.a contents ==="
-  ar t "$NUPKG" | head -20
-  GTEST=$(find ~ -name 'libgtest.a' -path '*googletest*lib/native*' 2>/dev/null | head -1)
-  echo "=== libgtest.a contents ==="
-  ar t "$GTEST" | head -20
-
-  # 3. сколько копий gtest static-init в готовом бинаре
+  # B. Количество gtest static-init в бинаре:
   nm -C bin/grpc_sdk_test 2>/dev/null \
-    | grep -E '_GLOBAL__sub_I.*gtest-all|_GLOBAL__sub_I.*gtest_internal' \
-    | wc -l find ~ -name 'googletest*.nupkg' -path '*Bitbucket*' -o -path '*legacy*' 2>/dev/null
-
-for f in $(find ~/el_conf ~ -name 'lib*.a' 2>/dev/null | grep -E 'native|el_conf'); do
-    tags=$(nm -C "$f" 2>/dev/null | grep -oE 'lts_20[0-9]{6}' | sort -u | tr '\n' ' ')
-    [ -n "$tags" ] && echo "$tags  <- $f"
-  done
+    | grep -E '_GLOBAL__sub_I.*gtest|_GLOBAL__(sub_)?I_.*gtest-all' \
+    | head -20
+  echo "---"
+  nm -C bin/grpc_sdk_test 2>/dev/null | grep -cE '_GLOBAL__sub_I.*gtest'
 
 
 export LD_LIBRARY_PATH=$(find ~ -maxdepth 4 -type d -path '*/lib/native/lin-gcc84-shared-x86_64' 2>/dev/null | tr '\n' ':')$LD_LIBRARY_PATH
