@@ -1,3 +1,7 @@
+sed -i 's/TYPED_TEST_CASE(GrpcServiceTcp,/TYPED_TEST_SUITE(GrpcServiceTcp,/' tests/GRPCServiceTest.cpp
+  sed -i 's/TYPED_TEST_CASE(GrpcServiceUnix,/TYPED_TEST_SUITE(GrpcServiceUnix,/' tests/GRPCServiceTest.cpp
+
+
 ./bin/grpc_sdk_test --gtest_filter='-GrpcServiceTcp/*:-GrpcServiceUnix/*'
 
 
