@@ -1,15 +1,16 @@
-nm -C /home/user/absl.lin.gcc84.shared.x86_64.0.2.0.1/lib/native/lin-gcc84-shared-x86_64-d/liblog.a 2>/dev/null \
-      | grep -E 'CheckOpMessageBuilder|LogMessageFatal|MakeCheckOpString' | head -10
+# 1. Что вообще лежит в нашем coarse liblog.a (.o файлы)
+  ar t /home/user/absl.lin.gcc84.shared.x86_64.0.2.0.1/lib/native/lin-gcc84-shared-x86_64-d/liblog.a 2>/dev/null
 
-  # 2. Есть ли в Release-варианте (на всякий)
-  nm -C /home/user/absl.lin.gcc84.shared.x86_64.0.2.0.1/lib/native/lin-gcc84-shared-x86_64/liblog.a 2>/dev/null \
-      | grep -E 'CheckOpMessageBuilder|LogMessageFatal|MakeCheckOpString' | head -10
+  # 2. Может символ определён в другой нашей .a (не log)?
+  for f in /home/user/absl.lin.gcc84.shared.x86_64.0.2.0.1/lib/native/lin-gcc84-shared-x86_64-d/*.a; do
+      if nm -C "$f" 2>/dev/null | grep -E "^[0-9a-f]+ [TVW] absl::.*LogMessageFatal::LogMessageFatal\(char const\*, int\)" >/dev/null; then
+          echo "DEFINED in: $f"
+      fi
+  done
+  
+  # 3. Что в lib/ source-сборки conan'а реально есть (чтобы понять что было ВХОДОМ агрегации)
+  find /home/user/.conan2/p -path '*abseil*' -name 'libabsl_log_internal*.a' 2>/dev/null | head -10
 
-  # 3. На какой liblog.a реально указывает CMakeCache в el_conf
-  grep -E 'log_LIBRARY' ~/el_conf/.build/lin.gcc.shared.x64/CMakeCache.txt | head -4
-
-  # 4. Какие ВСЕ liblog.a есть в /home/user/
-  find /home/user -maxdepth 4 -name 'liblog.a' 2>/dev/null
 
 
 
