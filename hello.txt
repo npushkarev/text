@@ -1,4 +1,13 @@
- cat grpc_sdk/CMakeFiles/grpc_sdk_test.dir/link.txt | tr ' ' '\n' | grep -E '\.a$|\.so|--whole-archive|--no-whole-archive'
+cmake -DCMAKE_BUILD_TYPE=Debug \
+        -DCOVERAGE=ON \
+        -DBUILD_SHARED_LIBS=ON \
+        -DBUILD_RELEASE=NO \
+        -DVALIDATION=OFF \
+        ../..
+  cmake --build . -- -j$(nproc)
+  ctest -VV
+
+
 
   # B. Количество gtest static-init в бинаре:
   nm -C bin/grpc_sdk_test 2>/dev/null \
