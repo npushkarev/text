@@ -1,4 +1,8 @@
- cat ~/el_conf/sura_connector_client/CMakeLists.var
+  rm -rf /home/user/protobuf.lin.gcc84.shared.x86_64.4.25.2.1/proto
+  mkdir -p /home/user/protobuf.lin.gcc84.shared.x86_64.4.25.2.1/proto/google/protobuf
+  cp ~/temp/proto_dontwork/google/protobuf/*.proto \
+     /home/user/protobuf.lin.gcc84.shared.x86_64.4.25.2.1/proto/google/protobuf/
+
 
 
 
