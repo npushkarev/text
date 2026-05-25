@@ -1,3 +1,5 @@
+grep -rn 'absl:0\.2\.0' ~/grpc_sdk --include=CMakeLists.var --include=CMakeLists.txt
+
 cmake -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchains/linux_x86_64.cmake \
         -DVALIDATION=OFF -DCOVERAGE=ON \
         -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=ON \
