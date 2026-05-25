@@ -1,3 +1,5 @@
+./bin/grpc_sdk_test --gtest_filter='-GrpcServiceTcp/*'
+
 for f in $(find ~/el_conf ~ -name 'lib*.a' 2>/dev/null | grep -E 'native|el_conf'); do
     tags=$(nm -C "$f" 2>/dev/null | grep -oE 'lts_20[0-9]{6}' | sort -u | tr '\n' ' ')
     [ -n "$tags" ] && echo "$tags  <- $f"
