@@ -1,5 +1,11 @@
-sed -i 's/TYPED_TEST_CASE(GrpcServiceTcp,/TYPED_TEST_SUITE(GrpcServiceTcp,/' tests/GRPCServiceTest.cpp
-  sed -i 's/TYPED_TEST_CASE(GrpcServiceUnix,/TYPED_TEST_SUITE(GrpcServiceUnix,/' tests/GRPCServiceTest.cpp
+cd ~/grpc_sdk
+  echo "=== 1. упоминания в CMakeLists ==="
+  grep -rn 'GRPCServiceTest' --include='CMakeLists.txt' .
+  echo "=== 2. .o файлы в build ==="
+  find .build -name 'GRPCServiceTest.cpp.o' -ls
+  echo "=== 3. сколько копий символа StartStop в бинаре ==="
+  nm -C .build/lin.gcc.shared.x64/bin/grpc_sdk_test 2>/dev/null \
+    | grep 'GrpcServiceTcp.*StartStop' | wc -l
 
 
 ./bin/grpc_sdk_test --gtest_filter='-GrpcServiceTcp/*:-GrpcServiceUnix/*'
