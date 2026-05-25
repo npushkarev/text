@@ -1,3 +1,8 @@
+ rm -rf /home/user/absl.lin.gcc84.shared.x86_64.0.2.0
+  rm -rf /home/user/protobuf.lin.gcc84.shared.x86_64.4.25.2
+  rm -rf /home/user/utf8_range.lin.gcc84.shared.x86_64.0.1.0
+
+
 find /home/user -maxdepth 3 -name CMakeLists.var 2>/dev/null | xargs grep -l 'absl' 2>/dev/null | while read f; do
       echo "=== $f ==="
       grep -nE 'absl' "$f"
