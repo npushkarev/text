@@ -1,21 +1,5 @@
-cd ~/grpc_sdk
-  echo "=== 1. упоминания в CMakeLists ==="
-  grep -rn 'GRPCServiceTest' --include='CMakeLists.txt' .
-  echo "=== 2. .o файлы в build ==="
-  find .build -name 'GRPCServiceTest.cpp.o' -ls
-  echo "=== 3. сколько копий символа StartStop в бинаре ==="
-  nm -C .build/lin.gcc.shared.x64/bin/grpc_sdk_test 2>/dev/null \
-    | grep 'GrpcServiceTcp.*StartStop' | wc -l
-
-
-./bin/grpc_sdk_test --gtest_filter='-GrpcServiceTcp/*:-GrpcServiceUnix/*'
-
-
- cd ~/grpc_sdk
-  grep -rn --include='*.cpp' --include='*.h' \
-    -E 'class GRPCService|struct GRPCService|TYPED_TEST_SUITE_P?\b|TYPED_TEST\(GrpcService(Tcp|Unix)' tests/
-
-
+ grep -rEn 'TYPED_TEST|class GRPCService\b|class GrpcServiceTcp|class GrpcServiceUnix' \
+    --include='*.cpp' --include='*.h' --include='*.cc' .
 ./bin/grpc_sdk_test --gtest_filter='-GrpcServiceTcp/*'
 
 for f in $(find ~/el_conf ~ -name 'lib*.a' 2>/dev/null | grep -E 'native|el_conf'); do
