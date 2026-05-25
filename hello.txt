@@ -1,5 +1,11 @@
-strings /home/user/protobuf.lin.gcc84.shared.x86_64.4.25.2.1/lib/native/lin-gcc84-shared-x86_64/libprotobuf.so \
-      2>/dev/null | grep -oE 'lts_[0-9]+' | sort -u
+ find /home/user -path '*/absl/base/options.h' 2>/dev/null
+
+  # Какой inline-namespace объявляет каждый
+  for f in $(find /home/user -path '*/absl/base/options.h' 2>/dev/null); do
+      echo "=== $f ==="
+      grep -E 'INLINE_NAMESPACE_NAME' "$f" | head -3
+  done
+
 
 
  rm -rf /home/user/absl.lin.gcc84.shared.x86_64.0.2.0
