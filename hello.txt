@@ -1,3 +1,10 @@
+
+  # 2. Что просит grpc_sdk
+  grep -E 'absl' ~/grpc_sdk/CMakeLists.var ~/grpc_sdk/**/CMakeLists.var 2>/dev/null
+
+  # 3. Что реально подцепил CMake
+  grep -E 'absl|0\.2\.0' ~/grpc_sdk/.build/lin.gcc.shared.x64/CMakeCache.txt | head -20
+
 cmake -DCMAKE_BUILD_TYPE=Debug \
         -DCOVERAGE=ON \
         -DBUILD_SHARED_LIBS=ON \
