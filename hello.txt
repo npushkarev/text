@@ -1,19 +1,7 @@
-  # 1. Кто в коде или CMakeLists.var ссылается на protolib
-  grep -rn 'protolib' ~/el_conf 2>/dev/null | head -10
+ sed -i '94s/protolib/protoc/' ~/el_conf/plugins/profibus_dp_ui_plugin/CMakeLists.var
 
-  # 2. Кто из установленных пакетов пинит protolib как компонент
-  grep -rn 'protolib' /home/user/*.lin.gcc84.shared.x86_64.*/CMakeLists.var 2>/dev/null | head -10
-
-  # 3. Что наш .1-протобуф объявляет как components
-  grep -A20 'set(components' /home/user/protobuf.lin.gcc84.shared.x86_64.4.25.2.1/CMakeLists.var
-
-  # 4. Что реально лежит в наших lib/
-  ls /home/user/protobuf.lin.gcc84.shared.x86_64.4.25.2.1/lib/native/lin-gcc84-shared-x86_64/ | head -20
-
-  # 5. Есть ли libprotolib где-то ещё на VM (например в Trash от старого пакета)
-  find /home/user -name 'libprotolib*' 2>/dev/null
-  find /home/user/.local/share/Trash -name 'libprotolib*' 2>/dev/null
-
+  # Проверь
+  sed -n '90,98p' ~/el_conf/plugins/profibus_dp_ui_plugin/CMakeLists.var
 
 
 
