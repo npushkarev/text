@@ -1,3 +1,7 @@
+ sed -i '94s/protoc/protolib/' ~/el_conf/plugins/profibus_dp_ui_plugin/CMakeLists.var
+  sed -n '94p' ~/el_conf/plugins/profibus_dp_ui_plugin/CMakeLists.var
+
+
  sed -i '94s/protolib/protoc/' ~/el_conf/plugins/profibus_dp_ui_plugin/CMakeLists.var
 
   # Проверь
