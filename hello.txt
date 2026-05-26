@@ -1,13 +1,18 @@
+  # 1. Кто в коде или CMakeLists.var ссылается на protolib
+  grep -rn 'protolib' ~/el_conf 2>/dev/null | head -10
 
-  # 1. Какие CMakeLists.var в el_conf и какие у них component_type
-  grep -rH 'component_type' ~/el_conf --include='CMakeLists.var' 2>/dev/null
+  # 2. Кто из установленных пакетов пинит protolib как компонент
+  grep -rn 'protolib' /home/user/*.lin.gcc84.shared.x86_64.*/CMakeLists.var 2>/dev/null | head -10
 
-  # 2. Найти тот что executable
-  grep -rl 'component_type executable' ~/el_conf --include='CMakeLists.var' 2>/dev/null
+  # 3. Что наш .1-протобуф объявляет как components
+  grep -A20 'set(components' /home/user/protobuf.lin.gcc84.shared.x86_64.4.25.2.1/CMakeLists.var
 
-  # 3. Когда нашёл — покажи весь target_libraries блок
-  # Допустим это ~/el_conf/el_conf/CMakeLists.var:
-  grep -A50 'set(target_libraries' ~/el_conf/<executable-component>/CMakeLists.var
+  # 4. Что реально лежит в наших lib/
+  ls /home/user/protobuf.lin.gcc84.shared.x86_64.4.25.2.1/lib/native/lin-gcc84-shared-x86_64/ | head -20
+
+  # 5. Есть ли libprotolib где-то ещё на VM (например в Trash от старого пакета)
+  find /home/user -name 'libprotolib*' 2>/dev/null
+  find /home/user/.local/share/Trash -name 'libprotolib*' 2>/dev/null
 
 
 
