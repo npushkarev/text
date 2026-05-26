@@ -5,7 +5,7 @@
 
 
 
-
+export LD_LIBRARY_PATH="$(find /home/user -maxdepth 4 -path '*/lib/native/lin-gcc84-shared-x86_64*' -type d | tr '\n' ':')$LD_LIBRARY_PATH"
 
 rm -rf /home/user/protobuf.lin.gcc84.shared.x86_64.4.25.2.1/proto
   mkdir -p /home/user/protobuf.lin.gcc84.shared.x86_64.4.25.2.1/proto/google/protobuf
