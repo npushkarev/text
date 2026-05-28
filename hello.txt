@@ -1,109 +1,301 @@
-
-⏺ Как добавить новый пакет в conan-recipes — коротко
+ Legacy в проекте — коротко
   
-  За 5 шагов
+  Что такое «legacy» в нашем контексте
 
-  1. Скопировать структуру с похожего пакета
+  Старая система сборки third-party C++ библиотек до миграции на Conan. То что мы заменяем тикетами IN-353 (x86_64) и IN-658 (ARM + downstream).
 
-  cp -r zlib/ <newpkg>/        # или re2/ если нужен ARM-patch
-  cd <newpkg>/
-  rm -rf src/* patches/* test_package/*
+  Три «слоя» legacy
 
-  2. Положить upstream-источник
-
-  - Скачай tarball с github releases (на машине с интернетом): https://github.com/<org>/<repo>/archive/refs/tags/v<X.Y.Z>.tar.gz
-  - Положи в <newpkg>/src/v<X.Y.Z>.tar.gz — filename должен совпадать с URL filename
-
-  3. Прописать conandata.yml
-
-  sources:
-    "<X.Y.Z>":
-      url: "https://github.com/<org>/<repo>/archive/refs/tags/v<X.Y.Z>.tar.gz"
-      sha256: "<32 байта hex>"   # sha256sum src/v<X.Y.Z>.tar.gz
-
-  4. Скопировать conanfile.py из conan-center-index
-
-  В интернете: github.com/conan-io/conan-center-index/tree/master/recipes//all/conanfile.py (https://github.com/conan-io/conan-center-index/) → копируй один в один.
-
-  Добавь две наши локальные правки (без них offline-сборка не работает):
-
-  class <Pkg>Conan(ConanFile):
-      name = "<newpkg>"
-      # ...всё что было...
-      exports_sources = "src/*.tar.gz"          # ← правка 1
-
-      def _offline_source_archive(self):         # ← правка 2 (helper)
-          import os
-          url = self.conan_data["sources"][self.version]["url"]
-          filename = os.path.basename(url)
-          candidate = os.path.join(self.recipe_folder, "src", filename)
-          if os.path.exists(candidate):
-              return candidate
-          for f in os.listdir(os.path.join(self.recipe_folder, "src")):
-              if f.endswith(".tar.gz"):
-                  return os.path.join(self.recipe_folder, "src", f)
-          return None
+  1. Legacy TeamCity-конфиги (сборка)
   
-      def source(self):
-          _local = self._offline_source_archive()
-          if _local:
-              unzip(self, _local, strip_root=True)
-          else:
-              get(self, **self.conan_data["sources"][self.version], strip_root=True)
-          apply_conandata_patches(self)
+  GR113   — Linux x64 DynamicRT      → .shared.x86_64. артефакты
+  GR121   — Linux x64 StaticRT        → .static.x86_64. артефакты
+  GR122   — Linux ARM cross           → .shared.arm-linaro. артефакты
+  GR120   — упаковочный конфиг        → nuget push на ProGet
+  Способ сборки: ручные shell-скрипты в Bitbucket репозиториях bitbucket.inc.elara.local/<pkg>-build/. Каждая библиотека (zlib, abseil, ...) — отдельный TC-конфиг +
+  свой Dockerfile + свои флаги.
   
-  5. Прописать legacy-имя в deployer (если отличается)
+  Что мы делаем: заменяем эти TC-конфиги на один Conan-based конфиг что вызывает run_grpc_1601_upstream.sh. Какой именно layout (replace GR121/GR122 in-place vs
+  параллельно vs отдельный раздел) — на согласовании с лидом.
 
-  В extensions/deployers/legacy_nupkg.py найти LEGACY_NAME_MAP и добавить:
+  2. Legacy .nupkg формат (артефакты)
 
-  LEGACY_NAME_MAP = {
-      # ...
-      "<newpkg>": "<legacy-name>",   # например "fmt": "fmt", "c-ares": "cares"
-  }
-
-  Тест локально
+  absl.lin.gcc84.shared.x86_64.0.2.0.nupkg
+  │    │  │     │      │       │
+  │    │  │     │      │       └── version (legacy slot)
+  │    │  │     │      └────────── arch
+  │    │  │     └───────────────── slot-tag (DynamicRT/StaticRT)
+  │    │  └─────────────────────── compiler short
+  │    └────────────────────────── os short
+  └─────────────────────────────── legacy CI name (не Conan-name!)
+  Внутри:
+  <pkg>.nupkg (zip):
+  ├── lib/native/<lin-gcc84-shared-x86_64>/    ← .a файлы (Release)
+  ├── lib/native/<lin-gcc84-shared-x86_64-d>/  ← .a файлы (Debug, -g -O0)
+  ├── include/
+  ├── proto/                                    ← *.proto (только для protobuf)
+  ├── build/native/*.targets                    ← NuGet MSBuild integration
+  ├── CMakeLists.var                            ← _dependencies для Elara resolver
+  └── *.nuspec                                  ← NuGet metadata
+  Что мы делаем: наш deployer extensions/deployers/legacy_nupkg.py упаковывает Conan-output в этот же формат байт-в-байт. Downstream не отличает наши .nupkg от
+  старых.
   
-  # 1. Собрать
-  conan create <newpkg>/ --version=<X.Y.Z> \
-      -pr:h=astra-gcc -pr:b=astra-gcc \
-      -s build_type=Release --build=missing --no-remote
+  3. Legacy CMake framework (потребители)
 
-  # повторить для Debug — deployer'у нужны оба
-  conan create <newpkg>/ --version=<X.Y.Z> ... -s build_type=Debug --build=missing --no-remote
+  Elara-вкусовая CMake-обвязка живёт в продуктах (el_conf, grpc_sdk, sura, и т.д.):
 
-  # 2. Упаковать в .nupkg
-  conan install --requires=<newpkg>/<X.Y.Z> \
+  <consumer-product>/cmake/
+  ├── ResolveDependencies.cmake     ← парсит CMakeLists.var, тянет nupkg с ProGet
+  ├── FindInstalledPackage.cmake    ← matches `<legacy-id>` литерально
+  ├── PlatformHelper.cmake          ← TARGET_PLATFORM, TARGET_ARCH_CPU
+  │                                    BUILD_SHARED_LIBS → "shared"/"static"
+  ├── NuGetInstall.cmake            ← скачивание .nupkg через nuget cli
+  └── ...
+
+  Ключевая мысль: этот framework matches пакеты по литеральному имени <legacy-name>.<os>.<comp>.<slot>.<arch>.<ver> из CMakeLists.var::_dependencies. Поэтому имя
+  нашего нового .nupkg должно точно совпадать со старым.
+
+  Имена что не совпадают между Conan и Legacy
+
+  ┌────────────┬─────────────────┬─────────────────────────────────────┐
+  │ Conan-имя  │ Legacy-имя в CI │            Где маппится             │
+  ├────────────┼─────────────────┼─────────────────────────────────────┤
+  │ gtest      │ googletest      │ LEGACY_NAME_MAP                     │
+  ├────────────┼─────────────────┼─────────────────────────────────────┤
+  │ c-ares     │ cares           │ LEGACY_NAME_MAP (дефис ломал -D...) │
+  ├────────────┼─────────────────┼─────────────────────────────────────┤
+  │ abseil     │ absl            │ LEGACY_NAME_MAP                     │
+  ├────────────┼─────────────────┼─────────────────────────────────────┤
+  │ protobuf   │ protobuf        │ (одинаково)                         │
+  ├────────────┼─────────────────┼─────────────────────────────────────┤
+  │ grpc       │ grpc            │ (одинаково)                         │
+  ├────────────┼─────────────────┼─────────────────────────────────────┤
+  │ zlib       │ zlib            │ (одинаково)                         │
+  ├────────────┼─────────────────┼─────────────────────────────────────┤
+  │ openssl-1x │ openssl         │ (упрощение в _resolve_legacy_name)  │
+  ├────────────┼─────────────────┼─────────────────────────────────────┤
+  │ re2        │ re2             │ (одинаково)                         │
+  └────────────┴─────────────────┴─────────────────────────────────────┘
+  
+  Версии что не совпадают
+
+  LEGACY_VERSION_MAP = {
+      "abseil": "0.2.0",     # Наш abseil/20230802.1 пакуем как absl/0.2.0
+  }                          # downstream ищет absl:0.2.0 буквально
+
+  И слой .1 суффикса (LEGACY_NUPKG_VERSION_SUFFIX=.1) — coexistence-стратегия. Параллельно с легаси absl/0.2.0 публикуем absl/0.2.0.1 (наш). ProGet оставляет оба,
+  NuGet resolver выбирает старшую.
+
+  Где живёт legacy исторически
+
+  ┌──────────────────────────────────┬────────────────────────────────────────────────────────────────────────────────────┐
+  │               Что                │                                        Где                                         │
+  ├──────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────┤
+  │ Build-скрипты legacy             │ bitbucket.inc.elara.local/<pkg>-build/                                             │
+  ├──────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────┤
+  │ Базовые Docker-образы для legacy │ ProGet: proget.inc.elara.local/main/library/{gcc84,gcc75}-build-{x86_64,arm,arm64} │
+  ├──────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────┤
+  │ Скомпилированные .nupkg          │ ProGet: proget.inc.elara.local/nuget/Default/                                      │
+  ├──────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────┤
+  │ Потребители (downstream)         │ Bitbucket: bitbucket.inc.elara.local/{el_conf,grpc_sdk,sura,...}                   │
+  └──────────────────────────────────┴────────────────────────────────────────────────────────────────────────────────────┘
+
+  Что наш deployer делает чтобы legacy compat сохранить
+  
+  1. Имя файла:     LEGACY_NAME_MAP + _short_compiler + _arch_short
+  2. Версия:        LEGACY_VERSION_MAP + LEGACY_NUPKG_VERSION_SUFFIX
+  3. Slot-tag:      "shared" всегда (env LEGACY_NUPKG_LINKAGE override)
+  4. Структура:     lib/native/<suffix>/ — точно так же
+  5. Aliases:       libz.a → libzlib.a, libprotoc.a → libprotolib.a
+  6. abseil:        21 крупный .a из legacy-coarse (вместо 150 мелких)
+  7. proto:         *.proto зеркалится в отдельный proto/ слой
+  8. CMakeLists.var: _dependencies с legacy-именами+версиями
+  9. .nuspec:       <dependencies> с тем же slot+arch+suffix
+
+  TL;DR по legacy
+
+  - Что заменяем: TC-конфиги GR113/GR121/GR122/GR120 + ручные shell-build-скрипты
+  - Что НЕ ломаем: формат .nupkg, имена, slot-теги, структуру внутри. Downstream не должен ничего заметить.
+  - Ключевой принцип: наш .nupkg подменяет старый byte-compatible, через ProGet через .1 суффикс (coexistence) или прямой replace (final cutover — решение лида)
+
+  Полный исторический контекст: docs/IN-658/MIGRATION-PLAYBOOK.md (Часть 0 — «История проекта»).
+
+✻ Crunched for 44s
+
+❯ я про скрипт который делает legaxy нугет пакеты                                                                                                                    
+  ⎿  Retrying in 0s · attempt 1/10
+
+⏺ legacy_nupkg.py — скрипт для упаковки в legacy .nupkg
+
+  Что это в одной фразе
+
+  Custom Conan deployer, который берёт обычный Conan-output из кэша и упаковывает его в .nupkg-формат, совместимый со старыми TeamCity-артефактами.
+
+  Где живёт
+  
+  extensions/deployers/legacy_nupkg.py    ~700 строк
+
+  Что делает (одной картинкой)
+
+  ~/.conan2/p/<pkghash>/p/             ← готовый Conan-install
+    lib/, include/, share/
+              │
+              │  conan install ... --deployer=legacy_nupkg.py
+              ▼
+  output/<legacy-name>.lin.gcc84.shared.x86_64.1.60.1.nupkg
+    ├── lib/native/lin-gcc84-shared-x86_64/      ← Release .a
+    ├── lib/native/lin-gcc84-shared-x86_64-d/    ← Debug .a
+    ├── include/
+    ├── proto/                                    ← только для protobuf
+    ├── build/native/*.targets                    ← NuGet MSBuild stub
+    ├── CMakeLists.var                            ← deps для Elara resolver
+    └── *.nuspec                                  ← NuGet metadata
+
+  Как запустить
+
+  # Шаг 1: Release+Debug должны быть в Conan-cache
+  conan create grpc/ --version=1.60.1 ... -s build_type=Release --build=missing
+  conan create grpc/ --version=1.60.1 ... -s build_type=Debug --build=missing
+
+  # Шаг 2: вызов deployer'а
+  conan install --requires=grpc/1.60.1 \
       -pr:h=astra-gcc -pr:b=astra-gcc --no-remote \
+      -o "*/*:shared=False" \
       --deployer=extensions/deployers/legacy_nupkg.py \
       --deployer-folder=output/
+  
+  --deployer-folder — куда сложить .nupkg. Каждый dep из install-графа → один .nupkg. Для grpc-tree выйдет 7 .nupkg (grpc + 6 transitive).
 
-  # 3. Проверить
-  ls output/<legacy-name>.lin.gcc84.shared.x86_64.<X.Y.Z>.nupkg
-  unzip -l output/<legacy-name>.lin.gcc84.shared.x86_64.<X.Y.Z>.nupkg | head
+  9 ключевых механизмов
 
-  Если что-то пошло не так
+  ┌───────────────────────────────────────┬──────────────┬───────────────────────────────────────────────────────────────────────────────┐
+  │                  Что                  │ Где (строка) │                                     Зачем                                     │
+  ├───────────────────────────────────────┼──────────────┼───────────────────────────────────────────────────────────────────────────────┤
+  │ LEGACY_NAME_MAP                       │ 24-32        │ Conan-имя → legacy CI-имя (gtest→googletest, c-ares→cares, abseil→absl)       │
+  ├───────────────────────────────────────┼──────────────┼───────────────────────────────────────────────────────────────────────────────┤
+  │ LEGACY_VERSION_MAP                    │ 48-53        │ Conan-version → legacy slot version (abseil/20230802.1 пакуем как absl/0.2.0) │
+  ├───────────────────────────────────────┼──────────────┼───────────────────────────────────────────────────────────────────────────────┤
+  │ LEGACY_NUPKG_VERSION_SUFFIX (env)     │ 55-58        │ Добавляет .1 к версии — coexistence с легаси на ProGet                        │
+  ├───────────────────────────────────────┼──────────────┼───────────────────────────────────────────────────────────────────────────────┤
+  │ LEGACY_NUPKG_LINKAGE (env)            │ 495          │ Slot-tag в имени (shared default, static для GR121-slot)                      │
+  ├───────────────────────────────────────┼──────────────┼───────────────────────────────────────────────────────────────────────────────┤
+  │ _short_compiler()                     │ ~95          │ gcc 8.4 → gcc84, msvc 193 → v143                                              │
+  ├───────────────────────────────────────┼──────────────┼───────────────────────────────────────────────────────────────────────────────┤
+  │ _arch_short() / _resolve_arch_short() │ ~125         │ x86_64 остаётся, armv7hf → arm, armv8 → arm64, +linaro для cross              │
+  ├───────────────────────────────────────┼──────────────┼───────────────────────────────────────────────────────────────────────────────┤
+  │ LIB_FILENAME_ALIASES                  │ ~290         │ Symlinks: libz.a → libzlib.a, libprotoc.a → libprotolib.a                     │
+  ├───────────────────────────────────────┼──────────────┼───────────────────────────────────────────────────────────────────────────────┤
+  │ LEGACY_LIBDIR_OVERRIDE                │ 318          │ abseil пакуем из lib/legacy-coarse/ (21 крупный .a вместо 150 мелких)         │
+  ├───────────────────────────────────────┼──────────────┼───────────────────────────────────────────────────────────────────────────────┤
+  │ LEGACY_LINKAGE_OVERRIDE               │ 322          │ Per-package override slot-tag'а (сейчас пустой)                               │
+  └───────────────────────────────────────┴──────────────┴───────────────────────────────────────────────────────────────────────────────┘
 
-  ┌────────────────────────────────┬────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-  │            Симптом             │                                                       Что чинить                                                       │
-  ├────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-  │ Could not find sources for ... │ Filename в src/ не совпадает с URL filename в conandata.yml                                                            │
-  ├────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-  │ Sha256 mismatch                │ Пересчитай: sha256sum src/v<X.Y.Z>.tar.gz                                                                              │
-  ├────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-  │ .nupkg имя кривое              │ Добавь маппинг в LEGACY_NAME_MAP в legacy_nupkg.py                                                                     │
-  ├────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-  │ Линкер не находит lib          │ Проверь cpp_info.libs = [...] в package_info()                                                                         │
-  ├────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-  │ Внутри .nupkg .so вместо .a    │ Conan-recipe собрал shared. Запусти с -o "<newpkg>/*:shared=False" или поставь default в conanfile.py::default_options │
-  └────────────────────────────────┴────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+  Что генерится для каждого .nupkg
 
-  Чеклист перед коммитом
+  *.nuspec (NuGet XML metadata)
+  
+  <package>
+    <metadata>
+      <id>grpc.lin.gcc84.shared.x86_64</id>
+      <version>1.60.1.1</version>
+      <dependencies>
+        <group>
+          <dependency id="absl.lin.gcc84.shared.x86_64"     version="0.2.0.1" />
+          <dependency id="protobuf.lin.gcc84.shared.x86_64" version="4.25.2.1" />
+          <!-- ... все transitive deps -->
+        </group>
+      </dependencies>
+    </metadata>
+    <files>
+      <file src="lib\**"         target="lib"/>
+      <file src="include\**"     target="include"/>
+      <file src="build\**"       target="build"/>
+      <file src="proto\**"       target="proto"/>
+      <file src="CMakeLists.var" target=""/>
+    </files>
+  </package>
+  
+  CMakeLists.var (для Elara resolver)
 
-  - <newpkg>/conanfile.py имеет exports_sources + _offline_source_archive
-  - <newpkg>/src/v<X.Y.Z>.tar.gz залит
-  - <newpkg>/conandata.yml с URL+sha256
-  - conan create + deployer прошли локально
-  - LEGACY_NAME_MAP обновлён (если новое имя)
-  - test_package/ минимальный smoke-тест есть
-  - Добавил в test-astra/run_grpc_1601_upstream.sh массив EXPORTS если пакет в grpc-tree
-  - Перепустил ./test-astra/run_grpc_1601_upstream.sh end-to-end на dev-VM
+  # Components
+  set(grpc
+      lin.gcc84.shared.x86_64
+      )
+
+  # List of dependencies on other projects.
+  set(${project_name}_dependencies
+      absl:0.2.0.1
+      protobuf:4.25.2.1
+      zlib:1.3.0.1
+      c-ares:1.25.0.1
+      re2:20230301.1
+      openssl:1.1.11.1
+      )
+
+  Elara framework (ResolveDependencies.cmake) парсит это, тянет каждую <name>:<ver> пару с ProGet.
+
+  build/native/*.targets (MSBuild integration)
+
+  Для Windows/MSBuild — заглушка чтобы NuGet был «валидный», у нас не активно используется.
+
+  Env-переменные на которые реагирует
+
+  ┌─────────────────────────────┬───────────────────┬────────────────────────────┐
+  │             Env             │        Что        │          Default           │
+  ├─────────────────────────────┼───────────────────┼────────────────────────────┤
+  │ LEGACY_NUPKG_LINKAGE        │ Slot-tag в имени  │ shared (DynamicRT — GR113) │
+  ├─────────────────────────────┼───────────────────┼────────────────────────────┤
+  │ LEGACY_NUPKG_VERSION_SUFFIX │ Суффикс к version │ пусто                      │
+  └─────────────────────────────┴───────────────────┴────────────────────────────┘
+
+  Когда что трогать в файле
+  
+  ┌──────────────────────────────────────────────┬───────────────────────────────────────────┐
+  │                  Что хочешь                  │                Где править                │
+  ├──────────────────────────────────────────────┼───────────────────────────────────────────┤
+  │ Добавил новый пакет с другим legacy-именем   │ LEGACY_NAME_MAP                           │
+  ├──────────────────────────────────────────────┼───────────────────────────────────────────┤
+  │ Новый компилятор/архитектура                 │ _short_compiler() / _resolve_arch_short() │
+  ├──────────────────────────────────────────────┼───────────────────────────────────────────┤
+  │ Lib-файлы под новым именем                   │ LIB_FILENAME_ALIASES                      │
+  ├──────────────────────────────────────────────┼───────────────────────────────────────────┤
+  │ Пакет под legacy-version slot                │ LEGACY_VERSION_MAP                        │
+  ├──────────────────────────────────────────────┼───────────────────────────────────────────┤
+  │ Slot-tag (shared vs static)                  │ env LEGACY_NUPKG_LINKAGE, файл не трогать │
+  ├──────────────────────────────────────────────┼───────────────────────────────────────────┤
+  │ Пустые папки пропадают в .nupkg              │ _make_keepdirs()                          │
+  │ Для пакета нужна специальная lib/ директория │ LEGACY_LIBDIR_OVERRIDE                    │
+  └──────────────────────────────────────────────┴───────────────────────────────────────────┘
+  
+  5 важных моментов помнить
+  
+  1. Запускать после Release И Debug уже в cache. Без обоих — deployer ругнётся «package not in cache».
+  2. Slot-tag в имени ≠ свойство контента. Контент всегда .a (static). Tag это runtime-CRT selector для downstream-резолвера.
+  3. Aliases — symlinks, не копии. Старый код -lz работает, новый -lzlib тоже. 
+  4. _dependencies в CMakeLists.var и .nuspec — синхронизированы. Версии и имена идентичны во всех файлах.
+  5. Output полностью детерминирован. Тот же conan-cache + тот же deployer = bit-identical .nupkg. 
+  
+  Один пример как вызывают наши скрипты
+  
+  test-astra/run_grpc_1601_upstream.sh (строки 224-234):
+  conan install --requires="grpc/1.60.1" \
+      -pr:h="$PROFILE" -pr:b="$PROFILE" \
+      --no-remote \
+      -o "*/*:shared=$SHARED" \
+      -o "abseil/*:shared=False" \
+      -o "protobuf/*:debug_suffix=False" \
+      --deployer="$ROOT_DIR/extensions/deployers/legacy_nupkg.py" \
+      --deployer-folder="$ROOT_DIR/$OUTPUT_DIR"
+      
+  После этого в output-grpc-1601-upstream/ лежат 7 .nupkg.
+  
+  TL;DR
+  
+  legacy_nupkg.py — это переводчик из Conan-формата в .nupkg-формат старого TC. Главное что он умеет:
+  1. Переименовать пакет/версию под legacy-схему
+  2. Уложить файлы в правильную внутреннюю структуру
+  3. Сгенерить CMakeLists.var с deps в legacy-нотации
+  4. Сделать alias-симлинки для совместимости
+  5. Сохранить slot-tag (.shared.x86_64.) который понимает downstream-резолвер
+  
+  Полные кейсы отладки: docs/IN-658/MIGRATION-PLAYBOOK.md (часть 2 — 21 разобранный кейс).
