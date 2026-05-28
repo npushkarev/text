@@ -1,559 +1,183 @@
- sed -i '94s/protoc/protolib/' ~/el_conf/plugins/profibus_dp_ui_plugin/CMakeLists.var
-  sed -n '94p' ~/el_conf/plugins/profibus_dp_ui_plugin/CMakeLists.var
+ Опишу всё что миграция на Conan добавила в репо, по логическим группам. Учитываю что в скриншоте STATUS.md и USAGE.md лежат внутри docs/IN-658/ (не в корне) — IDE
+  показывает плоский поиск или смежные ветки.
 
+  1. Recipe-директории (8 шт) — суть миграции
 
- sed -i '94s/protolib/protoc/' ~/el_conf/plugins/profibus_dp_ui_plugin/CMakeLists.var
+  Каждый из этих каталогов — рецепт сборки одной third-party библиотеки. Структура одинаковая (canonical conan-center pattern + 2 наших edit'а):
 
-  # Проверь
-  sed -n '90,98p' ~/el_conf/plugins/profibus_dp_ui_plugin/CMakeLists.var
+  <pkg>/
+  ├── conanfile.py            Recipe — Python-класс, описывает как собрать пакет:
+  │                           options/requires/generate/build/package/package_info.
+  │                           Зеркало из conan-center-index + offline-source
+  │                           helper (2 локальных edit'а: exports_sources="src/*.tar.gz"
+  │                           + _offline_source_archive() в source()).
+  ├── conandata.yml           Метаданные: URLs/sha256 upstream-тарболлов +
+  │                           регистрация .patch-файлов по версиям. Upstream-as-is.
+  ├── src/<ver>.tar.gz        Offline-копия upstream-исходников. Нужна потому
+  │                           что dev-VM/CI работают на closed-network — нет
+  │                           доступа к github.com.
+  ├── patches/                Локальные .patch файлы (unified diff) поверх
+  │                           upstream. Применяются авто через apply_conandata_patches.
+  └── test_package/           Conan smoke-тест: минимальный потребитель,
+                              гоняется автоматом в `conan create`.
 
-
-
-export LD_LIBRARY_PATH="$(find /home/user -maxdepth 4 -path '*/lib/native/lin-gcc84-shared-x86_64*' -type d | tr '\n' ':')$LD_LIBRARY_PATH"
-
-rm -rf /home/user/protobuf.lin.gcc84.shared.x86_64.4.25.2.1/proto
-  mkdir -p /home/user/protobuf.lin.gcc84.shared.x86_64.4.25.2.1/proto/google/protobuf
-  cp ~/temp/proto_dontwork/google/protobuf/*.proto \
-     /home/user/protobuf.lin.gcc84.shared.x86_64.4.25.2.1/proto/google/protobuf/
-
-
-
-
- ls /home/user/protobuf.lin.gcc84.shared.x86_64.4.25.2.1/proto/google/protobuf/ 2>/dev/null
-
- find /home/user -path '*/absl/base/options.h' 2>/dev/null
-
-  # Какой inline-namespace объявляет каждый
-  for f in $(find /home/user -path '*/absl/base/options.h' 2>/dev/null); do
-      echo "=== $f ==="
-      grep -E 'INLINE_NAMESPACE_NAME' "$f" | head -3
-  done
-
-
-
- rm -rf /home/user/absl.lin.gcc84.shared.x86_64.0.2.0
-  rm -rf /home/user/protobuf.lin.gcc84.shared.x86_64.4.25.2
-  rm -rf /home/user/utf8_range.lin.gcc84.shared.x86_64.0.1.0
-
-
-find /home/user -maxdepth 3 -name CMakeLists.var 2>/dev/null | xargs grep -l 'absl' 2>/dev/null | while read f; do
-      echo "=== $f ==="
-      grep -nE 'absl' "$f"
-  done
-
-grep -rn 'absl:0\.2\.0' ~/grpc_sdk --include=CMakeLists.var --include=CMakeLists.txt
-
-cmake -DCMAKE_TOOLCHAIN_FILE=../../cmake/toolchains/linux_x86_64.cmake \
-        -DVALIDATION=OFF -DCOVERAGE=ON \
-        -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=ON \
-        -DBUILD_RELEASE=NO ../..
-
-  # 2. Что просит grpc_sdk
-  grep -E 'absl' ~/grpc_sdk/CMakeLists.var ~/grpc_sdk/**/CMakeLists.var 2>/dev/null
-
-  # 3. Что реально подцепил CMake
-  grep -E 'absl|0\.2\.0' ~/grpc_sdk/.build/lin.gcc.shared.x64/CMakeCache.txt | head -20
-
-cmake -DCMAKE_BUILD_TYPE=Debug \
-        -DCOVERAGE=ON \
-        -DBUILD_SHARED_LIBS=ON \
-        -DBUILD_RELEASE=NO \
-        -DVALIDATION=OFF \
-        ../..
-  cmake --build . -- -j$(nproc)
-  ctest -VV
-
-
-
-  # B. Количество gtest static-init в бинаре:
-  nm -C bin/grpc_sdk_test 2>/dev/null \
-    | grep -E '_GLOBAL__sub_I.*gtest|_GLOBAL__(sub_)?I_.*gtest-all' \
-    | head -20
-  echo "---"
-  nm -C bin/grpc_sdk_test 2>/dev/null | grep -cE '_GLOBAL__sub_I.*gtest'
-
-
-export LD_LIBRARY_PATH=$(find ~ -maxdepth 4 -type d -path '*/lib/native/lin-gcc84-shared-x86_64' 2>/dev/null | tr '\n' ':')$LD_LIBRARY_PATH
- ./bin/grpc_sdk_test
-
-  # 1. что реально лежит в grpc-nupkg:
-  ls ~/grpc.lin.gcc84.shared.x86_64.1.60.1.1/lib/native/lin-gcc84-shared-x86_64/ | grep -E 'upb|utf8|unsecure'
-
-  # 2. собрал ли их вообще conan (есть ли в кэше):
-  find ~/.conan2/p -name 'libupb_collections_lib.so*' -o -name 'libutf8_range_lib.so*' 2>/dev/null
-
-
-
-unzip -p output-grpc-1601-upstream/zlib.*.nupkg CMakeLists.var | grep -A3 'set(components'
-
-
-  # 1. что лежит в zlib-пакете — есть ли libzlib.so рядом с libz.so
-  ls -la /home/user/zlib.*/lib/native/*/
-
-  # 2. какой версией zlib прописан в grpc — по ней решаем суффикс
-  grep -i zlib /home/user/grpc.*/CMakeLists.var
-
-
-
-# 1. точная линк-строка тест-экзешника
-  cat grpc_sdk/CMakeFiles/grpc_sdk_test.dir/link.txt
-
-  # 2. есть ли вообще -L и какие -l
-  grep -oE '\-L[^ ]+'              grpc_sdk/CMakeFiles/grpc_sdk_test.dir/link.txt | sort -u
-  grep -oE '\-l[A-Za-z0-9_.+-]+'   grpc_sdk/CMakeFiles/grpc_sdk_test.dir/link.txt | sort -u
-
-  # 3. где реально лежит libzlib.* / libz.* из резолвнутого пакета
-  find ~/grpc_sdk -name 'libzlib*' -o -name 'libz.so*' 2>/dev/null
-
-
-
-
-  Что выяснить — 3 команды
+  Наши 8 recipes (= 8 каталогов в корне):
+  - zlib/ — компрессия
+  - gtest/ — Google Test
+  - abseil/ — Abseil C++ utility libs
+  - c-ares/ — async DNS resolver 
+  - re2/ — regex library
+  - protobuf/ — Protocol Buffers
+  - openssl/ (3.x) и openssl-1x/ (1.1.x — для legacy compat с grpc 1.60)
+  - grpc/ — собственно grpc; расширенный доп.файлами (см. ниже)
   
-  # 1. что реально лежит в lib у нового absl и КАК называются файлы
-  ls -lR ~/absl.lin.gcc84.shared.x86_64.0.2.0.1/lib
+  Особенный grpc/ — что у него есть сверх стандарта
 
-  # 2. как уложен СТАРЫЙ legacy absl — эталон раскладки, под который писан резолвер
-  ls -lR ~/absl.lin.gcc84.shared.x86_64.0.2.0/lib
+  ┌───────────────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │               Файл                │                                                           Зачем                                                           │
+  ├───────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ cmake/                            │ CMake-helpers для grpc internals (forward-declared targets, find_package shims)                                           │
+  ├───────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ target_info/                      │ Описание grpc CMake-таргетов (gpr, grpc, grpc++, plugin-binaries) для package_info() — какие либы экспортить с каким      │
+  │                                   │ cpp_info.components[...]                                                                                                  │
+  ├───────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ conan_cmake_project_include.cmake │ Подключается grpc'шным CMakeToolchain как project_include — патчит C/C++ флаги до project(), обходит особенности grpc     │
+  │                                   │ CMakeLists.txt                                                                                                            │
+  └───────────────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+  
+  2. extensions/deployers/legacy_nupkg.py — ядро migration-специфики
 
-  # 3. какие -L / -l реально на линк-строке
-  cd ~/grpc_sdk/.build/lin.gcc.shared.x64
-  tr ' ' '\n' < grpc_sdk/CMakeFiles/grpc_sdk_test.dir/link.txt | grep -E '^-[Ll]'
+  Это наш custom deployer. Без него миграция не имела бы смысла — он берёт обычный conan-output (lib/, include/ в ~/.conan2/p/...) и переупаковывает в .nupkg-формат,
+   байт-совместимый с legacy TeamCity артефактами.
 
+  Что делает:
+  - Имя файла: <legacy_name>.<os>.<compiler_short>.<linkage>.<arch_short>.<version>.nupkg
+  - Внутренняя структура: lib/native/<lin-gcc84-static-x86_64>/, build/native/*.targets, .nuspec, CMakeLists.var
+  - LEGACY_NAME_MAP: маппит conan-имя → legacy CI имя (gtest → googletest, c-ares → cares)
+  - _short_compiler / _arch_short / _resolve_arch_short: маппят conan-settings в коротки CI-нотации (gcc 8.4 → gcc84, armv7hf → arm, +linaro суффикс если cross)
+  - Coarse-aggregation для abseil (21 крупная .a вместо 150 мелких)
+  - Alias-симлинки (libprotolib.a → libprotoc.a, libzlib.a → libz.a)
+  - Proto-mirror для protobuf (копия *.proto в отдельный proto/-слой)
+  
+  3. profiles/ — Conan-профили (host & build платформ)
 
-rm -rf ~/abseil.lin.gcc84.shared.x86_64.20240116.2.1/
-  rm -rf ~/absl.lin.gcc84.shared.x86_64.0.2.0/ 
+  profiles/
+  ├── astra-gcc                       # host=build на dev-VM (Astra 1.8 gcc 8.4 native)
+  ├── lin-gcc84-x86_64                # x86_64 native build (Docker mirror)
+  ├── lin-gcc84-i686                  # 32-bit x86 (multilib в той же x86_64 image)
+  ├── lin-gcc75-arm-linaro            # armv7hf cross (linaro 7.5)
+  ├── lin-gcc-aarch64-linaro          # arm64 cross (linaro 7.5)
+  ├── linux-gcc / linux-gcc-debug     # generic linux profiles (early POC)
+  ├── win-v142-x64 / win-v142-x86     # Windows MSVC 2019 (vc142)
+  ├── win-v143-x64                    # Windows MSVC 2022 (vc143)
+  ├── windows-msvc / windows-msvc-debug
+  └── toolchains/
+      ├── linaro-arm.cmake            # CMAKE_TOOLCHAIN_FILE для armv7hf cross
+      └── linaro-aarch64.cmake        # ... для aarch64 cross
+                                      # Содержат -fuse-ld=gold workaround
+                                      # под linaro 7.5 binutils 2.32 баг
 
+  Профайл = pinned compiler, compiler.version, compiler.libcxx, arch, os, build_type + [buildenv] + [conf]. Conan читает это в pr:h=.../pr:b=....
 
-ls ~/abseil.lin.gcc84.shared.x86_64.20240116.2.1/lib/native/*/  2>/dev/null | grep -i cord
+  4. Offline-сборка (packages/, packages-linux/, src/*.tar.gz)
 
+  На closed-network нет доступа к pypi/github. Migration положила всё локально:
+  - packages-linux/conan-2.27.1.tar.gz + все её транзитивные зависимости (.tar.gz) — pip wheels Conan'а для Linux
+  - packages/ — то же для Windows (.whl) 
+  - packages-linux/cpython-3.11.10+...x86_64-linux-gnu.tar.gz — standalone Python 3.11 (Debian Stretch system python слишком стар для Conan 2)
+  - <pkg>/src/<ver>.tar.gz — upstream-источники каждой библиотеки (тарболлы из github archive) 
+  
+  conanfile.py::source() для всех 8 recipes имеет helper _offline_source_archive() — он матчит filename из conandata.yml URL в src/ и распаковывает оттуда вместо
+  wget.
 
-ls ~/absl.lin.gcc84.shared.x86_64.0.2.0/lib/native/lin-gcc84-shared-x86_64/ | grep -i cord
+  5. Сборочные обвязки
 
- cat ~/grpc_sdk/.build/lin.gcc.shared.x64/grpc_sdk/CMakeFiles/grpc_sdk_test.dir/link.txt | tr ' ' '\n' | grep -E '^-l|zlib|absl|grpc'
+  test-astra/ — Linux shell-скрипты (22 шт)
+  
+  setup.sh                         venv + offline-install Conan из packages-linux/
+  install_deps.sh                  apt deps (gcc, cmake, python3-venv)
+  run_test_grpc.sh                 главный grpc-build (7 пакетов, ~25 мин)
+  run_test.sh / run_test_zlib.sh   single-package tests
+  run_grpc_1601_upstream.sh        grpc 1.60.1 + 6 deps через Docker-mirror,
+                                   выдаёт 7 .nupkg в output-grpc-1601-upstream/
+  run_grpc.sh/run_gtest.sh/run_zlib.sh  одиночные сборки разной linkage
+  run_legacy_versions.sh           матрица legacy-version compatibility tests
+  test_arm_cross.sh                ARM cross-orchestrator
+  test_all_profiles.sh             matrix-runner по всем профилям
+  diag_arm.sh                      ARM-диагностика
+  collect_*.sh / diag_*.sh / fix_*.sh  отладочные на dev-VM
+  patch_nupkg_dep.sh               surgical patch для CMakeLists.var в готовом .nupkg
+  patch_utf8_range_dep.sh          специализированный patch для utf8_range зависимости
+  prepare_legacy_from_bitbucket.sh  pull legacy исходников с Bitbucket в src/
+  diff_two_dirs.sh                 12-axes сравнение двух output-директорий
+  run_prebake.sh                   pre-bake Docker images в ProGet
+  run_proto_4252_canonical.sh      canonical protobuf 4.25.2 reproduction
+  HELP.txt                         нумерованные диагностические блоки [0]-[12]
+  TESTING_ARM.md / NEXT_STEPS.md   ARM runbooks
+  README.md                        обзор test-astra
 
+  test-windows/ — те же скрипты на .bat (Windows lockstep per hard contract)
 
-CACHE_VOLUME=conan-cache-1601-v2 LEGACY_NUPKG_VERSION_SUFFIX=.1 ~/conan-master/test-astra/run_grpc_1601_upstream.sh
+  setup.bat, install_deps.bat
+  run_grpc.bat, run_gtest.bat, run_zlib.bat
+  run_test.bat, run_test_grpc.bat, run_test_zlib.bat
 
-include_directories(${project_include_dirs})
-  message(STATUS "[DEBUG] project_include_dirs=[${project_include_dirs}]")
-  message(STATUS "[DEBUG] crossplatform_INCLUDE_DIRS=[${crossplatform_INCLUDE_DIRS}]")
+  6. Docker-инфраструктура (root)
 
+  Dockerfile.grpc-tc-mirror     Multi-stage Dockerfile — main продуктовый.
+                                Stage 1 (x64_native_tc) тянет gcc84-build-x86_64
+                                из ProGet, COPY's /usr/local/gcc-8.4/ в
+                                /opt/x64-native-gcc/. Stage 2 — собственно
+                                mirror, COPY --from=x64_native_tc для build
+                                context на ARM cross.
+  Dockerfile.astra-test / Dockerfile.grpc-test / Dockerfile.gtest-test /
+  Dockerfile.zlib-test          POC Dockerfiles от ранних экспериментов
+  docker-compose.yml            оркестрация POC-сервисов
+  .dockerignore                 что не копировать в Docker контекст
 
+  7. Документация (docs/IN-658/ — то что в скриншоте под README/STATUS/USAGE)
 
-if(NOT "${${project_name}_dependencies}" STREQUAL "")
-          message(STATUS "Find dependencies for ${_name}")
-          set(_unseen_deps "")
-          foreach(_d ${${project_name}_dependencies})
-              if(NOT _d IN_LIST __resolve_deps_visited_global)
-                  list(APPEND _unseen_deps ${_d})
-                  list(APPEND __resolve_deps_visited_global ${_d})
-              endif()
-          endforeach()
-          set(__resolve_deps_visited_global
-              "${__resolve_deps_visited_global}"
-              CACHE INTERNAL "deps already processed by resolve_dependencies")
-          if(NOT "${_unseen_deps}" STREQUAL "")
-              resolve_dependencies(DEPENDENCIES ${_unseen_deps})
-          endif()
-      endif()
-docker run --rm -v conan-cache-legacy-x86_64:/root/.conan2 grpc-tc-mirror \                                                                                       
-      bash -c "find /root/.conan2/p -path '*/absl/base/options.h' -exec grep ABSL_OPTION_INLINE_NAMESPACE_NAME {} \;"      
-#!/bin/bash
-#
-# deps_report.sh — отчёт по дереву зависимостей legacy NuGet пакетов.
-#
-# Назначение:
-#   1. Показать прямые/транзитивные зависимости каждого pkg в NuGet-кэше.
-#   2. Показать обратные зависимости (кто использует pkg-кандидат на миграцию).
-#   3. Найти outdated transitive deps (protobuf 4.x, openssl 1.1.x, zlib 1.3.0).
-#
-# Использование:
-#   ./deps_report.sh                          — полный отчёт (forward + reverse)
-#   ./deps_report.sh flat                     — карта pkg → его _dependencies
-#   ./deps_report.sh tree <pkg> <ver>         — forward-дерево от pkg вниз
-#   ./deps_report.sh reverse <pkg> <ver>      — reverse-дерево: кто потребляет pkg
-#   ./deps_report.sh migration                — reverse-деревья для всех outdated
-#   ./deps_report.sh outdated                 — список outdated entries в кэше
-#   ./deps_report.sh el_conf                  — forward-дерево от el_conf вниз
-#   ./deps_report.sh el_conf-reverse          — reverse-tree для каждой top-dep el_conf
-#   ./deps_report.sh el_conf-graph            — forward+reverse для каждой top-dep el_conf
-#
-# Переменные окружения:
-#   NUGET_DIR    — путь к NuGet-кэшу (default: $HOME/.nuget/packages)
-#   EL_CONF_DIR  — путь к корню el_conf  (default: $HOME/el_conf)
-#
-# Примеры:
-#   ./deps_report.sh > /tmp/report.txt
-#   ./deps_report.sh tree mosquitto 2.0.19
-#   ./deps_report.sh reverse openssl 1.1.11        # кто тянет старый openssl
-#   ./deps_report.sh reverse protobuf 4.25.2       # кто тянет старый protobuf
-#   ./deps_report.sh migration > /tmp/owners.txt
-#
-set -euo pipefail
+  10 файлов, около 4500 строк суммарно:
+  README.md                  Индекс — куда смотреть какому пользователю
+  STATUS.md                  Статус миграции для лида (тикеты IN-353, IN-658)
+  USAGE.md                   Hands-on tutorial: Conan first steps + наши .nupkg (677 строк)
+  CONFLUENCE.md              Overview для Confluence-страницы
+  DEVELOPER.md               Orientation для следующего разработчика
+  DEVOPS-RUNBOOK.md          CI/DevOps runbook (TeamCity миграция, ProGet upload)
+  DOWNSTREAM-MIGRATION.md    Что менять в el_conf/grpc_sdk/sura
+  CONANFILE-ANATOMY.md       Deep-dive структуры 9 наших conanfile.py (866 строк)
+  MIGRATION-PLAYBOOK.md      Полная методология + 21 разобранный кейс отладки (1411 строк)
+  INFRASTRUCTURE.md          Описание инфраструктуры — Bitbucket, TC, Docker, 
+                            ProGet, dev-VMs, network, toolchains (912 строк)
+                            
+  8. example/ — пример потребителя (как downstream выглядит)
 
-NUGET_DIR="${NUGET_DIR:-$HOME/.nuget/packages}"
-EL_CONF_DIR="${EL_CONF_DIR:-$HOME/el_conf}"
+  example/
+  ├── CMakeLists.txt          обычный CMake-проект
+  ├── conanfile.txt           Conan-зависимости (requires=zlib/X, gtest/Y)
+  └── src/
+      ├── example.hpp / example.cpp     консьюмер
+      └── example_test.cpp              gtest unit
 
-# Пакеты-кандидаты на миграцию (обновить при необходимости).
-MIGRATION_CANDIDATES=(
-    "openssl:1.1.11"
-    "protobuf:4.25.2"
-    "zlib:1.3.0"
-    "mosquitto:2.0.19"
-    "gsd_parser:0.15.0"
-    "grpc:1.60.1"
-)
+  Полезен для отладки конан-резолва зависимостей: «вот так это должно выглядеть в твоём el_conf после миграции».
 
-# ---------- helpers -----------------------------------------------------------
+  9. Мета-/служебные
 
-# Найти CMakeLists.var для конкретной пары pkg+version в NuGet-кэше.
-find_var_file() {
-    local pkg="$1"
-    local ver="$2"
-    find "$NUGET_DIR" -path "*${pkg}.lin.*/${ver}/CMakeLists.var" 2>/dev/null | head -1
-}
+  README.md                  ~53 КБ, ~1000 строк — главный обзор проекта,
+                            build matrix, "Добавление нового пакета" checklist
+  ARCHITECTURE.md            local-only (в .gitignore), context dump
+  CLAUDE.md                  local-only, инструкции для Claude Code (этот ассистент)
+  requirements.txt           pip-deps (conan, pyyaml)
+  .gitignore                 что не пушить (output*/, .bak, venv/, ARCHITECTURE.md, CLAUDE.md)
+  .dockerignore              что не класть в Docker context
+  server.conf                early POC artifact (можно удалить)
+  tools/                     вспомогательные утилиты
+  venv/                      Python virtualenv (в .gitignore)
 
-# Извлечь блок _dependencies из CMakeLists.var, по одной "name:version" на строку.
-extract_deps() {
-    local var_file="$1"
-    [ -f "$var_file" ] || return 0
-    awk '
-        /set\(\$\{project_name\}_dependencies/ { in_block=1; next }
-        in_block && /^[[:space:]]*\)/ { in_block=0; exit }
-        in_block {
-            gsub(/^[[:space:]]+|[[:space:]]+$/, "")
-            if (length($0) > 0) print
-        }
-    ' "$var_file"
-}
+  Summary в одну фразу
 
-# Превратить путь CMakeLists.var в "name:version" consumer'a.
-# В NuGet-кэше: <root>/<name>.lin.gcc84.shared.x86_64/<ver>/CMakeLists.var
-# el_conf репо:  $EL_CONF_DIR/CMakeLists.var → "el_conf:source"
-consumer_of() {
-    local var_file="$1"
-    if [[ "$var_file" == "$EL_CONF_DIR/"* ]]; then
-        echo "el_conf:source"
-        return
-    fi
-    local rel="${var_file#$NUGET_DIR/}"
-    local pkg_dir="${rel%%/*}"
-    local pkg_name="${pkg_dir%%.lin.*}"
-    local rest="${rel#$pkg_dir/}"
-    local pkg_ver="${rest%%/*}"
-    echo "${pkg_name}:${pkg_ver}"
-}
-
-# Все CMakeLists.var в кэше + (если есть) el_conf/CMakeLists.var.
-all_var_files() {
-    find "$NUGET_DIR" -name CMakeLists.var 2>/dev/null
-    [ -f "$EL_CONF_DIR/CMakeLists.var" ] && echo "$EL_CONF_DIR/CMakeLists.var"
-}
-
-# Построить ассоциативную мапу: dep "name:ver" → пробел-разделённый список consumers.
-declare -A CONSUMERS_MAP
-CONSUMERS_BUILT=0
-
-build_consumers_map() {
-    [ "$CONSUMERS_BUILT" = "1" ] && return
-    local var_file consumer dep
-    while IFS= read -r var_file; do
-        [ -f "$var_file" ] || continue
-        consumer="$(consumer_of "$var_file")"
-        while IFS= read -r dep; do
-            [ -z "$dep" ] && continue
-            CONSUMERS_MAP["$dep"]="${CONSUMERS_MAP[$dep]:-} $consumer"
-        done < <(extract_deps "$var_file")
-    done < <(all_var_files)
-    CONSUMERS_BUILT=1
-}
-
-# ---------- forward (что pkg тянет вниз) --------------------------------------
-
-# Рекурсивное дерево вниз от заданного pkg+version.
-deps_tree() {
-    local pkg="$1"
-    local ver="$2"
-    local prefix="${3:-}"
-    local seen="${4:-}"
-
-    echo "${prefix}${pkg}:${ver}"
-
-    case "$seen" in
-        *"|${pkg}:${ver}|"*)
-            echo "${prefix}    └── (already shown — cycle or duplicate)"
-            return
-            ;;
-    esac
-    seen="${seen}|${pkg}:${ver}|"
-
-    local var_file
-    var_file=$(find_var_file "$pkg" "$ver")
-    if [ -z "$var_file" ] || [ ! -f "$var_file" ]; then
-        echo "${prefix}    └── (NOT IN CACHE)"
-        return
-    fi
-
-    local deps
-    deps=$(extract_deps "$var_file")
-    [ -z "$deps" ] && return
-
-    local dep
-    while IFS= read -r dep; do
-        [ -z "$dep" ] && continue
-        local name="${dep%%:*}"
-        local v="${dep##*:}"
-        deps_tree "$name" "$v" "${prefix}    " "$seen"
-    done <<< "$deps"
-}
-
-# ---------- reverse (кто использует pkg) --------------------------------------
-
-# Рекурсивное reverse-дерево: показывает consumers'ов pkg+ver, потом их consumers'ов.
-deps_reverse_tree() {
-    local target="$1:$2"
-    local prefix="${3:-}"
-    local seen="${4:-}"
-
-    echo "${prefix}${target}"
-
-    case "$seen" in
-        *"|$target|"*)
-            echo "${prefix}    ↑ (already shown)"
-            return
-            ;;
-    esac
-    seen="${seen}|$target|"
-
-    build_consumers_map
-
-    local list="${CONSUMERS_MAP[$target]:-}"
-    [ -z "$list" ] && { echo "${prefix}    (no known consumers)"; return; }
-
-    # Уникальные consumers (один pkg может несколько раз попасть).
-    local consumer
-    for consumer in $(echo "$list" | tr ' ' '\n' | sort -u | grep -v '^$'); do
-        deps_reverse_tree "${consumer%:*}" "${consumer##*:}" "${prefix}    ↑ " "$seen"
-    done
-}
-
-# ---------- модули отчёта ------------------------------------------------------
-
-deps_flat() {
-    echo "========================================="
-    echo "Flat dependency map of $NUGET_DIR"
-    echo "========================================="
-    echo
-    local var_file
-    for var_file in $(find "$NUGET_DIR" -name CMakeLists.var 2>/dev/null | sort); do
-        local consumer
-        consumer="$(consumer_of "$var_file")"
-        echo "=== $consumer ==="
-        local deps
-        deps=$(extract_deps "$var_file")
-        if [ -z "$deps" ]; then
-            echo "    (no dependencies)"
-        else
-            echo "$deps" | sed 's/^/    /'
-        fi
-        echo
-    done
-}
-
-deps_outdated() {
-    echo "========================================="
-    echo "Outdated transitive deps blocking migration"
-    echo "========================================="
-    echo "(searching in $NUGET_DIR)"
-    echo
-    find "$NUGET_DIR" -name CMakeLists.var 2>/dev/null \
-        | xargs grep -HE "protobuf:[0-9]|openssl:[0-9]|zlib:[0-9]" 2>/dev/null \
-        | grep -E ":4\.|:1\.1\.|zlib:1\.3\.0" \
-        | sed "s|${NUGET_DIR}/||g"
-}
-
-deps_el_conf_top() {
-    local var_file="${EL_CONF_DIR}/CMakeLists.var"
-    echo "========================================="
-    echo "el_conf top-level dependencies"
-    echo "========================================="
-    echo "(from $var_file)"
-    echo
-    if [ ! -f "$var_file" ]; then
-        echo "    NOT FOUND: $var_file"
-        return
-    fi
-    extract_deps "$var_file" | sed 's/^/    /'
-}
-
-# ---------- el_conf-specific отчёты -------------------------------------------
-
-# Список top-level deps el_conf'a в виде "name:version" по одному на строку.
-el_conf_top_deps_list() {
-    local var_file="${EL_CONF_DIR}/CMakeLists.var"
-    [ -f "$var_file" ] || return 0
-    extract_deps "$var_file"
-}
-
-# Forward-дерево от el_conf вниз: top-level deps + рекурсивный обход каждой.
-el_conf_forward_tree() {
-    echo "========================================="
-    echo "el_conf full forward dependency tree"
-    echo "========================================="
-    echo "el_conf:source"
-    local dep
-    while IFS= read -r dep; do
-        [ -z "$dep" ] && continue
-        local name="${dep%%:*}"
-        local ver="${dep##*:}"
-        deps_tree "$name" "$ver" "    "
-    done < <(el_conf_top_deps_list)
-}
-
-# Reverse-tree для каждой top-dep el_conf'a (кто ещё её использует кроме el_conf).
-el_conf_reverse_for_each() {
-    echo "========================================="
-    echo "Reverse-tree for each el_conf top-level dep"
-    echo "========================================="
-    echo "Для каждой прямой зависимости el_conf — кто ещё её потребляет в кэше."
-    echo
-    local dep
-    while IFS= read -r dep; do
-        [ -z "$dep" ] && continue
-        echo "### Consumers of $dep"
-        deps_reverse_tree "${dep%%:*}" "${dep##*:}"
-        echo
-    done < <(el_conf_top_deps_list)
-}
-
-# Богатый отчёт: forward (что тянет) + reverse (кто ещё тянет) для каждой top-dep.
-el_conf_graph_report() {
-    echo "========================================="
-    echo "el_conf dependency graph — forward + reverse for each top-level dep"
-    echo "========================================="
-    echo
-    local dep
-    while IFS= read -r dep; do
-        [ -z "$dep" ] && continue
-        local name="${dep%%:*}"
-        local ver="${dep##*:}"
-        echo "######## $dep ########"
-        echo
-        echo "--- forward (what '$dep' pulls in) ---"
-        deps_tree "$name" "$ver"
-        echo
-        echo "--- reverse (who else consumes '$dep') ---"
-        deps_reverse_tree "$name" "$ver"
-        echo
-    done < <(el_conf_top_deps_list)
-}
-
-# Reverse-деревья для всех pkg-кандидатов на миграцию.
-migration_consumers_report() {
-    echo "========================================="
-    echo "Migration consumers report"
-    echo "========================================="
-    echo "Для каждого устаревшего пакета — дерево потребителей вверх."
-    echo "↑ означает 'используется кем-то выше' (consumer)."
-    echo
-    local entry
-    for entry in "${MIGRATION_CANDIDATES[@]}"; do
-        echo "### Consumers of $entry"
-        deps_reverse_tree "${entry%:*}" "${entry##*:}"
-        echo
-    done
-}
-
-full_report() {
-    echo "==============================================="
-    echo "Legacy NuGet migration dependency report"
-    echo "Generated: $(date)"
-    echo "Host:      $(hostname)"
-    echo "NuGet dir: $NUGET_DIR"
-    echo "==============================================="
-    echo
-
-    deps_el_conf_top
-    echo
-
-    deps_flat
-    echo
-
-    echo "========================================="
-    echo "Forward trees for key roots"
-    echo "========================================="
-    echo
-    local entry
-    for entry in \
-            "grpc_sdk:1.2.0" \
-            "cs_system_data:1.132.0" \
-            "cs_service_sdk:3.16.0" \
-            "mosquitto:2.0.19" \
-            "sura_proto:7.7.0" \
-            "gsd_parser:0.15.0" \
-            "ipc_factories_grpc:2.12.0" \
-            "service_sdk:3.9.0"; do
-        local name="${entry%%:*}"
-        local ver="${entry##*:}"
-        echo "### Tree: ${name}:${ver}"
-        deps_tree "$name" "$ver"
-        echo
-    done
-
-    migration_consumers_report
-    echo
-
-    deps_outdated
-}
-
-main() {
-    local cmd="${1:-full}"
-    case "$cmd" in
-        full)
-            full_report
-            ;;
-        flat)
-            deps_flat
-            ;;
-        tree)
-            local pkg="${2:-}"
-            local ver="${3:-}"
-            if [ -z "$pkg" ] || [ -z "$ver" ]; then
-                echo "Usage: $0 tree <pkg_name> <version>" >&2
-                exit 1
-            fi
-            deps_tree "$pkg" "$ver"
-            ;;
-        reverse)
-            local pkg="${2:-}"
-            local ver="${3:-}"
-            if [ -z "$pkg" ] || [ -z "$ver" ]; then
-                echo "Usage: $0 reverse <pkg_name> <version>" >&2
-                exit 1
-            fi
-            deps_reverse_tree "$pkg" "$ver"
-            ;;
-        migration)
-            migration_consumers_report
-            ;;
-        outdated)
-            deps_outdated
-            ;;
-        el_conf)
-            el_conf_forward_tree
-            ;;
-        el_conf-reverse)
-            el_conf_reverse_for_each
-            ;;
-        el_conf-graph)
-            el_conf_graph_report
-            ;;
-        *)
-            echo "Usage: $0 [full|flat|tree <pkg> <ver>|reverse <pkg> <ver>|migration|outdated|el_conf|el_conf-reverse|el_conf-graph]" >&2
-            exit 1
-            ;;
-    esac
-}
-
-main "$@"
+  Миграция добавила: 8 conan-recipes (по одной директории на библиотеку, каждая = conanfile.py + conandata.yml + offline src/*.tar.gz + patches/ + test_package/) + 1
+   кастомный deployer (extensions/deployers/legacy_nupkg.py, упаковка в legacy .nupkg) + 10 conan-профилей (host/build/cross комбинации) + 22 shell + 8 bat-обвязки
+  (test-astra/, test-windows/) + multi-stage Dockerfile для ARM cross-build + 10 doc-файлов в docs/IN-658/ + offline pip wheels (packages*/).
+  
+  Без этих частей нельзя получить тот же .nupkg что выдавал старый TeamCity, но воспроизводимо и из одной команды conan create.
