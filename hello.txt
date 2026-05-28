@@ -1,3 +1,31 @@
+`shared` | `True / False` | `False` | Тип библиотек на выходе. `False` — static (`.a`) что встраиваются прямо в бинарь потребителя; `True` — share
+         +d (`.so`) что подгружаются динамически на runtime. Наш канон — static (downstream Elara линкуется статически). |                                    
+      58 +| `fPIC` | `True / False` | `True` | Position-Independent Code. Позволяет встраивать наш static `.a` внутрь `.so` потребителя (если потребитель сам 
+         +сборка — shared). Без этого статические либы нельзя загнать в shared-объект. Полезно держать всегда `True`. |                                       
+      59 +| `codegen` | `True / False` | `True` | Собирать ли вообще plugin-бинари. Plugin'ы — это утилиты которые `protoc` запускает чтобы из `.proto` файлов
+         + сгенерить код для конкретного языка (C++, Python, etc). Если `False` — наши `.nupkg` будут БЕЗ `grpc_cpp_plugin`, потребитель не сможет генерироват
+         +ь grpc-stubs. Оставляем `True`. |                                                                                                                   
+      60 +| `cpp_plugin` | `True / False` | `True` | Включать ли `grpc_cpp_plugin` — генератор `*.grpc.pb.cc/h` файлов из `*.proto`. Нужен для C++ потребителе
+         +й (el_conf, grpc_sdk). Должен быть `True`. |                                                                                                        
+      61 +| `csharp_plugin` | `True / False` | `True` | `grpc_csharp_plugin` — генерация C#-биндингов. У нас не используется (нет C#-потребителей), но `True` 
+         +не мешает — бинарь маленький. |                                                                                                                     
+      62 +| `node_plugin` | `True / False` | `True` | `grpc_node_plugin` — генерация Node.js биндингов. Не используется в наших проектах. |                   
+      63 +| `objective_c_plugin` | `True / False` | `True` | `grpc_objective_c_plugin` — для iOS/macOS Objective-C. Не используется (мы Linux+ARM). |         
+      64 +| `php_plugin` | `True / False` | `True` | `grpc_php_plugin` — PHP-биндинги. Не используется. |                                                     
+      65 +| `python_plugin` | `True / False` | `True` | `grpc_python_plugin` — генератор Python-стабов через protoc. Не используется напрямую (если нужны Pyth
+         +on-grpc-биндинги — обычно ставят через pip). |                                                                                                      
+      66 +| `ruby_plugin` | `True / False` | `True` | `grpc_ruby_plugin` — Ruby-биндинги. Не используется. |                                                  
+      67 +| `secure` | `True / False` | `True` | Включать ли TLS-функциональность в grpc. `True` тянет openssl как зависимость и компилирует grpc с поддержкой
+         + шифрованных каналов (SSL/TLS). `False` — grpc собирается без openssl, поддерживает только незащищённые соединения (insecure channel). У нас защищён
+         +ные соединения нужны — оставляем `True`. |                                                                                                          
+      68 +| `use_systemd` | `True / False / "auto"` | `"auto"` | Интеграция с systemd-journal для логирования (`sd_journal_send`). `"auto"` = детектить наличи
+         +е libsystemd-dev при конфигурации; `True` = принудительно требовать; `False` = отключить. На Astra 1.8 systemd есть, но мы не пользуемся journal'ом 
+         +— обычно `False` либо `"auto"`. |                                                                                                                   
+      69 +| `with_libsystemd` | `True / False` | (derived) | Жёсткая обвязка: тянуть ли libsystemd как явный Conan-requires. Зависит от `use_systemd`. Обычно 
+         +derived автоматом — вручную не трогаем. |                                                                                                           
+      70 +| `csharp_ext` | `True / False` | `False` | Дополнительное C# extension (нативный модуль) для gRPC-C#. Нужно только если потребитель — приложение на
+         + C#. У нас нет — оставляем `False`. |         
+
 # Пакет `grpc` — полное описание
 
 > Документация по conan-recipe `grpc/` в репозитории `conan-recipes` (тикет IN-658). Самый сложный из 8 наших миграционных рецептов — 487 строк `conanfile.py`, поддержка 4 версий grpc (1.54.3 / 1.60.1 / 1.69.0 / 1.78.1), 6 offline-source tarball'ов, отдельный механизм target_info YAML'ов. Этот документ описывает каждый файл и где можно прокинуть CMake-флаги при сборке.
