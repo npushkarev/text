@@ -1,30 +1,109 @@
-Что даёт настройка кеша — коротко
+
+⏺ Как добавить новый пакет в conan-recipes — коротко
   
-  Без cache (каждая сборка с нуля)
+  За 5 шагов
 
-  - Grpc-дерево: 15-25 минут
-  - Каждый билд тянет источники → распаковывает → компилирует
-  - Disk thrash на каждом запуске
+  1. Скопировать структуру с похожего пакета
 
-  С локальным cache (Docker volume / CONAN_HOME)
+  cp -r zlib/ <newpkg>/        # или re2/ если нужен ARM-patch
+  cd <newpkg>/
+  rm -rf src/* patches/* test_package/*
 
-  - Первая сборка: 15-25 минут
-  - Повторная той же конфигурации: 30 секунд (Conan видит pre-built, пропускает)
-  - Повторная с изменённым флагом: пересобирает только то что упёрлось, остальное hit
-  - Выигрыш: ×30 на повторных билдах одного агента
+  2. Положить upstream-источник
 
-  С ProGet Conan-feed (общий cache на все агенты)
+  - Скачай tarball с github releases (на машине с интернетом): https://github.com/<org>/<repo>/archive/refs/tags/v<X.Y.Z>.tar.gz
+  - Положи в <newpkg>/src/v<X.Y.Z>.tar.gz — filename должен совпадать с URL filename
 
-  - Один агент собрал → запушил на ProGet
-  - Все остальные агенты скачивают готовые бинари (~2-3 минуты вместо сборки)
-  - Новый агент не нужно warming-up'ить
-  - Выигрыш: ×8-10 на свежем агенте + полная независимость от того кто что собрал
+  3. Прописать conandata.yml
 
-  С pre-baked Docker image
+  sources:
+    "<X.Y.Z>":
+      url: "https://github.com/<org>/<repo>/archive/refs/tags/v<X.Y.Z>.tar.gz"
+      sha256: "<32 байта hex>"   # sha256sum src/v<X.Y.Z>.tar.gz
 
-  - Pre-bake раз в неделю/месяц: всё внутри образа
-  - TC билд: docker pull (минута) + downstream-сборка (1-3 мин)
-  - Без pre-bake: pull base + Conan-setup + dep-fetch + downstream (10-15 мин)
-  - Выигрыш: ×5 на каждый downstream билд
+  4. Скопировать conanfile.py из conan-center-index
 
+  В интернете: github.com/conan-io/conan-center-index/tree/master/recipes//all/conanfile.py (https://github.com/conan-io/conan-center-index/) → копируй один в один.
 
+  Добавь две наши локальные правки (без них offline-сборка не работает):
+
+  class <Pkg>Conan(ConanFile):
+      name = "<newpkg>"
+      # ...всё что было...
+      exports_sources = "src/*.tar.gz"          # ← правка 1
+
+      def _offline_source_archive(self):         # ← правка 2 (helper)
+          import os
+          url = self.conan_data["sources"][self.version]["url"]
+          filename = os.path.basename(url)
+          candidate = os.path.join(self.recipe_folder, "src", filename)
+          if os.path.exists(candidate):
+              return candidate
+          for f in os.listdir(os.path.join(self.recipe_folder, "src")):
+              if f.endswith(".tar.gz"):
+                  return os.path.join(self.recipe_folder, "src", f)
+          return None
+  
+      def source(self):
+          _local = self._offline_source_archive()
+          if _local:
+              unzip(self, _local, strip_root=True)
+          else:
+              get(self, **self.conan_data["sources"][self.version], strip_root=True)
+          apply_conandata_patches(self)
+  
+  5. Прописать legacy-имя в deployer (если отличается)
+
+  В extensions/deployers/legacy_nupkg.py найти LEGACY_NAME_MAP и добавить:
+
+  LEGACY_NAME_MAP = {
+      # ...
+      "<newpkg>": "<legacy-name>",   # например "fmt": "fmt", "c-ares": "cares"
+  }
+
+  Тест локально
+  
+  # 1. Собрать
+  conan create <newpkg>/ --version=<X.Y.Z> \
+      -pr:h=astra-gcc -pr:b=astra-gcc \
+      -s build_type=Release --build=missing --no-remote
+
+  # повторить для Debug — deployer'у нужны оба
+  conan create <newpkg>/ --version=<X.Y.Z> ... -s build_type=Debug --build=missing --no-remote
+
+  # 2. Упаковать в .nupkg
+  conan install --requires=<newpkg>/<X.Y.Z> \
+      -pr:h=astra-gcc -pr:b=astra-gcc --no-remote \
+      --deployer=extensions/deployers/legacy_nupkg.py \
+      --deployer-folder=output/
+
+  # 3. Проверить
+  ls output/<legacy-name>.lin.gcc84.shared.x86_64.<X.Y.Z>.nupkg
+  unzip -l output/<legacy-name>.lin.gcc84.shared.x86_64.<X.Y.Z>.nupkg | head
+
+  Если что-то пошло не так
+
+  ┌────────────────────────────────┬────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │            Симптом             │                                                       Что чинить                                                       │
+  ├────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Could not find sources for ... │ Filename в src/ не совпадает с URL filename в conandata.yml                                                            │
+  ├────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Sha256 mismatch                │ Пересчитай: sha256sum src/v<X.Y.Z>.tar.gz                                                                              │
+  ├────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ .nupkg имя кривое              │ Добавь маппинг в LEGACY_NAME_MAP в legacy_nupkg.py                                                                     │
+  ├────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Линкер не находит lib          │ Проверь cpp_info.libs = [...] в package_info()                                                                         │
+  ├────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Внутри .nupkg .so вместо .a    │ Conan-recipe собрал shared. Запусти с -o "<newpkg>/*:shared=False" или поставь default в conanfile.py::default_options │
+  └────────────────────────────────┴────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  Чеклист перед коммитом
+
+  - <newpkg>/conanfile.py имеет exports_sources + _offline_source_archive
+  - <newpkg>/src/v<X.Y.Z>.tar.gz залит
+  - <newpkg>/conandata.yml с URL+sha256
+  - conan create + deployer прошли локально
+  - LEGACY_NAME_MAP обновлён (если новое имя)
+  - test_package/ минимальный smoke-тест есть
+  - Добавил в test-astra/run_grpc_1601_upstream.sh массив EXPORTS если пакет в grpc-tree
+  - Перепустил ./test-astra/run_grpc_1601_upstream.sh end-to-end на dev-VM
