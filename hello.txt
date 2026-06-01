@@ -1,3 +1,23 @@
+Шаг 1 — пересобрать образ (внутри ставится conan заново) и проверить версию
+
+  export REGISTRY=proget.inc.elara.local/main          # поправь под свой ProGet
+  docker build \
+    --build-arg BASE_IMAGE=$REGISTRY/library/gcc84-build-x86_64:0.1.0 \
+    --build-arg X64_BASE_IMAGE=$REGISTRY/library/gcc84-build-x86_64:0.1.0 \
+    -f Dockerfile.grpc-tc-mirror -t grpc-tc-mirror .
+  docker run --rm grpc-tc-mirror conan --version       # ждём 2.29.0
+  Оба --build-arg — на ProGet (на закрытом контуре дефолтный gcc:8 из Docker Hub недостижим). Если в образе вдруг 2.27.1 —
+  добавь --no-cache.
+
+  Шаг 2 — собрать дерево → 7 .nupkg
+  
+  docker run --rm -v "$PWD/output":/work/conan-recipes/output grpc-tc-mirror
+  ls -1 output/*.nupkg                                  # ждём 7 файлов
+  ~15–25 мин.
+
+  Что прислать мне
+
+
 Куда класть upstream-источники (<pkg>/src/*.tar.gz) — коротко
   
   Что это вообще
