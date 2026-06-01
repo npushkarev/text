@@ -1,3 +1,8 @@
+ export LD_LIBRARY_PATH="$(find /home/user -path '*lin.gcc84.shared.x86_64*' -name '*.so*' -exec dirname {} \; 2>/dev/null |
+  sort -u | paste -sd:):$LD_LIBRARY_PATH"
+  ./bin/grpc_sdk_test
+
+
 Шаг 1 — пересобрать образ (внутри ставится conan заново) и проверить версию
 
   export REGISTRY=proget.inc.elara.local/main          # поправь под свой ProGet
