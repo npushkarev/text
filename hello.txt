@@ -13,3 +13,17 @@ sudo docker run --rm -v conan-cache-grpc-1601-upstream:/c:ro -v "$HOME/bin":/out
 sudo docker run --rm -v conan-cache-grpc-1601-upstream:/c:ro -v "$HOME/bin/1.60.1":/out grpc-tc-mirror bash -lc 'p=$(find 
   /c -path "*protobuf*" -name protoc -type f|head -1); echo "$p"; cp "$p" /out/protoc && chmod 755 /out/protoc; /out/protoc 
   --version'
+
+
+ mkdir -p ~/bin/1.60.1
+  cp ~/bin/grpc_cpp_plugin ~/bin/1.60.1/grpc_cpp_plugin && chmod +x ~/bin/1.60.1/grpc_cpp_plugin
+  Достать protoc 4.25 из любого volume (вставляй блоком целиком):
+  for v in $(sudo docker volume ls -q); do
+  for v in $(sudo docker volume ls -q); do
+    echo "=== $v ==="
+    sudo docker run --rm -v "$v":/c:ro -v "$HOME/bin/1.60.1":/out grpc-tc-mirror bash -lc '
+      p=$(find /c -name protoc -type f -path "*protobuf*4.25*" 2>/dev/null | head -1)
+      [ -z "$p" ] && { echo "  нет"; exit 0; }
+      echo "  $p"; "$p" --version 2>&1 | head -1
+      cp "$p" /out/protoc && chmod 755 /out/protoc && echo "  -> скопирован"'
+  done
