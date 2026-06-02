@@ -6,3 +6,6 @@ sudo docker run --rm -v conan-cache-grpc-1601-upstream:/c:ro -v "$HOME/bin":/out
 
  grep -rn -iE 'protoc|runtime_version|grpc_cpp_plugin|PROTOC' \
      ~/grpc_sdk/cmake/GenerateGrpcCpp.cmake ~/grpc_sdk/cmake/CMakeCommon.cmake 2>/dev/null | head -30
+
+ mkdir -p ~/bin/1.60.1
+  cp ~/bin/grpc_cpp_plugin ~/bin/1.60.1/grpc_cpp_plugin && chmod +x ~/bin/1.60.1/grpc_cpp_plugin
