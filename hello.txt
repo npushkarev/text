@@ -1,2 +1,9 @@
 sudo SHARED=False CACHE_VOLUME=conan-protoc-fresh LEGACY_NUPKG_VERSION_SUFFIX=.1 \
        ./test-astra/run_grpc_1601_upstream.sh protobuf
+
+
+sudo docker run --rm -v conan-protoc-fresh:/c:ro -v "$HOME/bin/1.60.1":/out grpc-tc-mirror bash -lc '
+    p=$(find /c -path "*/p/bin/protoc" -type f 2>/dev/null | head -1)
+    [ -z "$p" ] && p=$(find /c -name protoc -type f 2>/dev/null | head -1)
+    echo "$p"; file "$p"; "$p" --version 2>&1 | head -1
+    cp "$p" /out/protoc && chmod 755 /out/protoc && echo "копировано в ~/bin/1.60.1/protoc"'
