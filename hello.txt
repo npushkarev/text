@@ -1,8 +1,5 @@
-docker run --rm -v conan-cache-grpc-1601-upstream:/c:ro -v "$HOME/bin":/out \
-    grpc-tc-mirror bash -c '
-      p=$(find /c -path "*grpc*" -name grpc_cpp_plugin -type f 2>/dev/null | head -1)
-      echo "found: $p"; cp "$p" /out/grpc_cpp_plugin && chmod 755 /out/grpc_cpp_plugin'
-  ldd ~/bin/grpc_cpp_plugin 2>&1 | grep -iE 'grpc|protobuf|absl|not found' \
-     && echo "ВНИМАНИЕ: динамический" || echo "статический ✅"
-  cd ~/el_conf/.build/lin.gcc.shared.x64 && rm -f CMakeCache.txt && bash 1.sh
+sudo docker run --rm -v conan-cache-grpc-1601-upstream:/c:ro -v "$HOME/bin":/out \
+    grpc-tc-mirror bash -c 'p=$(find /c -path "*grpc*" -name grpc_cpp_plugin -type f|head -1); echo "$p"; cp "$p" 
+  /out/grpc_cpp_plugin && chmod 755 /out/grpc_cpp_plugin'
+  ldd ~/bin/grpc_cpp_plugin 2>&1 | grep -c 'not found' 
 
