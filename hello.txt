@@ -1,27 +1,2 @@
-sudo docker run --rm -v conan-cache-grpc-1601-upstream:/c:ro -v "$HOME/bin":/out \
-    grpc-tc-mirror bash -c 'p=$(find /c -path "*grpc*" -name grpc_cpp_plugin -type f|head -1); echo "$p"; cp "$p" 
-  /out/grpc_cpp_plugin && chmod 755 /out/grpc_cpp_plugin'
-  ldd ~/bin/grpc_cpp_plugin 2>&1 | grep -c 'not found' 
-
-
- grep -rn -iE 'protoc|runtime_version|grpc_cpp_plugin|PROTOC' \
-     ~/grpc_sdk/cmake/GenerateGrpcCpp.cmake ~/grpc_sdk/cmake/CMakeCommon.cmake 2>/dev/null | head -30
-
- mkdir -p ~/bin/1.60.1
-  cp ~/bin/grpc_cpp_plugin ~/bin/1.60.1/grpc_cpp_plugin && chmod +x ~/bin/1.60.1/grpc_cpp_plugin
-
-sudo docker run --rm -v conan-cache-grpc-1601-upstream:/c:ro -v "$HOME/bin/1.60.1":/out grpc-tc-mirror bash -lc 'p=$(find 
-  /c -path "*protobuf*" -name protoc -type f|head -1); echo "$p"; cp "$p" /out/protoc && chmod 755 /out/protoc; /out/protoc 
-  --version'
-
-
- Вставь блоком:
-  for v in conan-cache-grpc-1601-upstream conan-cache-1601-v2 conan-cache-229; do
-    echo "=== $v ==="
-    sudo docker run --rm -v "$v":/c:ro -v "$HOME/bin/1.60.1":/out grpc-tc-mirror bash -lc '
-      p=$(find /c -name protoc -type f 2>/dev/null | head -1)
-      [ -z "$p" ] && { echo "  нет protoc"; exit 0; }
-      echo "  found: $p"; "$p" --version 2>&1 | head -1; file "$p" | cut -d: -f2-
-      cp "$p" /out/protoc && chmod 755 /out/protoc && echo "  -> скопировано в ~/bin/1.60.1/protoc"'
-  done
-
+sudo SHARED=False CACHE_VOLUME=conan-protoc-fresh LEGACY_NUPKG_VERSION_SUFFIX=.1 \
+       ./test-astra/run_grpc_1601_upstream.sh protobuf
