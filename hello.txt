@@ -1,15 +1,17 @@
 cd ~/conan-master
-  mkdir -p /tmp/grpc229-libs
-  for f in output-grpc-1601-upstream/*.nupkg; do
-    unzip -o -j "$f" 'lib/native/*/*.so*' -d /tmp/grpc229-libs 2>/dev/null
+  rm -rf /tmp/grpc229 && mkdir -p /tmp/grpc229
+  for f in output-grpc-1601-upstream/*.shared.*.nupkg; do
+    unzip -o -q "$f" -d "/tmp/grpc229/$(basename "$f" .nupkg)"
   done
-  ls /tmp/grpc229-libs
 
-  export LD_LIBRARY_PATH=/tmp/grpc229-libs
+  echo "=== какие .so реально есть в пакетах ==="
+  find /tmp/grpc229 -name 'libgrpc++*.so*' -o -name '*.so*' | grep -iE 'grpc|protobuf|re2|ssl|crypto|cares|absl|upb' | head
+  -30
+
+  export LD_LIBRARY_PATH="$(find /tmp/grpc229 -name '*.so*' -exec dirname {} \; | sort -u | paste -sd:)"
   cd ~/grpc_sdk/.build/lin.gcc.shared.x64
   ldd ./bin/grpc_sdk_test | grep -c 'not found'   # ждём 0
   ./bin/grpc_sdk_test
-
 
 
 
