@@ -1,10 +1,8 @@
-for p in $(find ~/.conan2 -type f -name grpc_cpp_plugin 2>/dev/null); do
-    echo "=== $p"; ls -l --time-style=+%m-%d_%H:%M "$p" | awk '{print "   "$6}'
-    ldd "$p" 2>&1 | grep -iE 'libgrpc|libprotobuf|libabsl|not found' \
-       || echo "   -> самодостаточный (без grpc/protobuf .so) ✅"
-  done
-  Возьми самодостаточный и самый свежий (из твоей последней сборки grpc/1.60.1), затем:
-  PLUG=<путь к выбранному>
-  ldd "$PLUG" | head -3                      # убедиться: только libc/libstdc++/ld
-  cp "$PLUG" ~/bin/grpc_cpp_plugin && chmod +x ~/bin/grpc_cpp_plugin
+docker run --rm -v conan-cache-grpc-1601-upstream:/c:ro -v "$HOME/bin":/out \
+    grpc-tc-mirror bash -c '
+      p=$(find /c -path "*grpc*" -name grpc_cpp_plugin -type f 2>/dev/null | head -1)
+      echo "found: $p"; cp "$p" /out/grpc_cpp_plugin && chmod 755 /out/grpc_cpp_plugin'
+  ldd ~/bin/grpc_cpp_plugin 2>&1 | grep -iE 'grpc|protobuf|absl|not found' \
+     && echo "ВНИМАНИЕ: динамический" || echo "статический ✅"
   cd ~/el_conf/.build/lin.gcc.shared.x64 && rm -f CMakeCache.txt && bash 1.sh
+
