@@ -1,3 +1,18 @@
+ G=~/grpc.lin.gcc84.shared.x86_64.1.60.1.1/lib/native/lin-gcc84-shared-x86_64
+  cd "$G"
+  cp -n libupb.a libupb.a.bak                         # бэкап тонкой libupb.a
+  rm -rf /tmp/upbm && mkdir -p /tmp/upbm
+  n=0; for f in "$G"/libupb_*_lib.a; do
+    mkdir -p /tmp/upbm/$n && ( cd /tmp/upbm/$n && ar x "$f" ); n=$((n+1))
+  done
+  rm -f libupb.a
+  ( cd /tmp/upbm && find . -name '*.o' -print0 | xargs -0 ar qcs "$G/libupb.a" )
+  echo "=== символы в новой libupb.a ==="
+  nm "$G/libupb.a" | grep -E ' T (upb_Encode|upb_strtable_insert|_upb_Message_GetOrCreateExtension)'
+  cd ~/grpc_sdk/.build/lin.gcc.shared.x64 && cmake --build . --target grpc_sdk_test
+
+
+
   # 1) точная линк-строка: какие upb-либы и в каком порядке реально линкуются
   cat ~/grpc_sdk/.build/lin.gcc.shared.x64/grpc_sdk/CMakeFiles/grpc_sdk_test.dir/link.txt | tr ' ' '\n' | grep -iE 'upb|utf8|libgrpc|address_sort'
 
