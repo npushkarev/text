@@ -1,6 +1,16 @@
- export LD_LIBRARY_PATH="$(find /home/user -path '*lin.gcc84.shared.x86_64*' -name '*.so*' -exec dirname {} \; 2>/dev/null |
-  sort -u | paste -sd:):$LD_LIBRARY_PATH"
+cd ~/conan-master
+  mkdir -p /tmp/grpc229-libs
+  for f in output-grpc-1601-upstream/*.nupkg; do
+    unzip -o -j "$f" 'lib/native/*/*.so*' -d /tmp/grpc229-libs 2>/dev/null
+  done
+  ls /tmp/grpc229-libs
+
+  export LD_LIBRARY_PATH=/tmp/grpc229-libs
+  cd ~/grpc_sdk/.build/lin.gcc.shared.x64
+  ldd ./bin/grpc_sdk_test | grep -c 'not found'   # ждём 0
   ./bin/grpc_sdk_test
+
+
 
 
 Шаг 1 — пересобрать образ (внутри ставится conan заново) и проверить версию
