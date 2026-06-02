@@ -9,3 +9,6 @@ sudo docker run --rm -v conan-cache-grpc-1601-upstream:/c:ro -v "$HOME/bin":/out
 
  mkdir -p ~/bin/1.60.1
   cp ~/bin/grpc_cpp_plugin ~/bin/1.60.1/grpc_cpp_plugin && chmod +x ~/bin/1.60.1/grpc_cpp_plugin
+
+ for p in $(find ~ /tmp -name protoc -type f 2>/dev/null); do printf '%s  <-  %s\n' "$("$p" --version 2>/dev/null)" "$p";
+  done | grep -E 'libprotoc 2[0-5]\.'
