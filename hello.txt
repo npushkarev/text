@@ -1,12 +1,14 @@
-  G=~/grpc.lin.gcc84.shared.x86_64.1.60.1.1/lib/native/lin-gcc84-shared-x86_64
-  echo "=== все upb-либы в пакете ==="
-  ls -la "$G" | grep -iE 'upb'
-  echo "=== кто определяет недостающие символы (T = определён) ==="
-  for s in upb_TextEncode upb_JsonEncode _upb_Message_GetOrCreateExtension upb_strtable_next; do
-    echo "-- $s --"
-    nm -A "$G"/*.a 2>/dev/null | grep -E " T $s$"
-  done
-
+ G=~/grpc.lin.gcc84.shared.x86_64.1.60.1.1/lib/native/lin-gcc84-shared-x86_64
+  cd "$G"
+  ld -r --whole-archive \
+     libupb_collections_lib.a libupb_json_lib.a libupb_textformat_lib.a \
+     --no-whole-archive -z muldefs \
+     -o /tmp/upb_full.o
+  rm -f libupb.a && ar qcs libupb.a /tmp/upb_full.o
+  echo "=== символы в собранной libupb.a ==="
+  nm libupb.a | grep -E ' T 
+  (upb_Encode|upb_Decode|upb_JsonEncode|upb_TextEncode|upb_strtable_insert|_upb_Message_GetOrCreateExtension)'
+  cd ~/grpc_sdk/.build/lin.gcc.shared.x64 && cmake --build . --target grpc_sdk_test
 
 
   # 1) точная линк-строка: какие upb-либы и в каком порядке реально линкуются
