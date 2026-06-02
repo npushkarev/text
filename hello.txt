@@ -15,9 +15,13 @@ sudo docker run --rm -v conan-cache-grpc-1601-upstream:/c:ro -v "$HOME/bin/1.60.
   --version'
 
 
-sudo docker run --rm -v conan-cache-proto-4252-canonical:/c:ro -v "$HOME/bin/1.60.1":/out grpc-tc-mirror bash -lc '
-    p=$(find /c -name protoc -type f 2>/dev/null | head -1)
-    echo "protoc: $p"; [ -z "$p" ] && exit 0
-    "$p" --version 2>&1 | head -1
-    file "$p"
-    cp "$p" /out/protoc && chmod 755 /out/protoc && echo "копировано в ~/bin/1.60.1/protoc"'
+ Вставь блоком:
+  for v in conan-cache-grpc-1601-upstream conan-cache-1601-v2 conan-cache-229; do
+    echo "=== $v ==="
+    sudo docker run --rm -v "$v":/c:ro -v "$HOME/bin/1.60.1":/out grpc-tc-mirror bash -lc '
+      p=$(find /c -name protoc -type f 2>/dev/null | head -1)
+      [ -z "$p" ] && { echo "  нет protoc"; exit 0; }
+      echo "  found: $p"; "$p" --version 2>&1 | head -1; file "$p" | cut -d: -f2-
+      cp "$p" /out/protoc && chmod 755 /out/protoc && echo "  -> скопировано в ~/bin/1.60.1/protoc"'
+  done
+
