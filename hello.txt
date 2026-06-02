@@ -1,17 +1,12 @@
-cd ~/conan-master
-  rm -rf /tmp/grpc229 && mkdir -p /tmp/grpc229
-  for f in output-grpc-1601-upstream/*.shared.*.nupkg; do
-    unzip -o -q "$f" -d "/tmp/grpc229/$(basename "$f" .nupkg)"
-  done
+  # 1) точная линк-строка: какие upb-либы и в каком порядке реально линкуются
+  cat ~/grpc_sdk/.build/lin.gcc.shared.x64/grpc_sdk/CMakeFiles/grpc_sdk_test.dir/link.txt | tr ' ' '\n' | grep -iE 'upb|utf8|libgrpc|address_sort'
 
-  echo "=== какие .so реально есть в пакетах ==="
-  find /tmp/grpc229 -name 'libgrpc++*.so*' -o -name '*.so*' | grep -iE 'grpc|protobuf|re2|ssl|crypto|cares|absl|upb' | head
-  -30
+  # 2) есть ли нужные символы в НАШЕМ встроенном upb (внутри grpc-пакета):
+  cd ~/grpc.lin.gcc84.shared.x86_64.1.60.1.1/lib/native/lin-gcc84-shared-x86_64
+  nm -A libupb_*.a libutf8_range_lib.a 2>/dev/null | grep -E ' [TtWw] (upb_Encode|upb_Decode|upb_strtable_insert|_upb_array_realloc)'
 
-  export LD_LIBRARY_PATH="$(find /tmp/grpc229 -name '*.so*' -exec dirname {} \; | sort -u | paste -sd:)"
-  cd ~/grpc_sdk/.build/lin.gcc.shared.x64
-  ldd ./bin/grpc_sdk_test | grep -c 'not found'   # ждём 0
-  ./bin/grpc_sdk_test
+  # 3) что лежит в ЛЕГАСИ upb 0.2.0, который тянет билд:
+  nm -A ~/upb.lin.gcc84.shared.x86_64.0.2.0/lib/native/*/lib*.a 2>/dev/null | grep -E 'upb_Encode|upb_strtable_insert' | head
 
 
 
