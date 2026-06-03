@@ -1,3 +1,16 @@
+
+  # кто из установленных пакетов называет upb компонентом:
+  grep -rHn '\bupb\b' /home/user/*/CMakeLists.var
+
+  # ссылается ли сам grpc_sdk на upb (его CMake / nuget-шаблоны):
+  grep -rHn upb ~/grpc_sdk --include='*.cmake*' --include='CMakeLists.txt' --include='*.in'
+
+  # точное место -lupb в падающей строке линковки:
+  tr ' ' '\n' < ~/grpc_sdk/.build/lin.gcc.shared.x64/grpc_sdk/CMakeFiles/grpc_sdk_test.dir/link.txt | grep -n upb
+
+
+
+
 grep -n upb /home/user/grpc.lin.gcc84.shared.x86_64.1.60.1*/CMakeLists.var
 
 sudo SHARED=False CACHE_VOLUME=conan-protoc-fresh LEGACY_NUPKG_VERSION_SUFFIX=.1 \
