@@ -1,3 +1,5 @@
+grep -n upb /home/user/grpc.lin.gcc84.shared.x86_64.1.60.1*/CMakeLists.var
+
 sudo SHARED=False CACHE_VOLUME=conan-protoc-fresh LEGACY_NUPKG_VERSION_SUFFIX=.1 \
        ./test-astra/run_grpc_1601_upstream.sh protobuf
 
