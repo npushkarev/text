@@ -1,9 +1,14 @@
- cmake -S . -B .build/lin.gcc.shared.x64 \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DBUILD_SHARED_LIBS=ON \
-    -DCUSTOM_DEFINES="" \
-    -G "Unix Makefiles"
+ B=~/grpc_sdk/build/x86/grpc_sdk/CMakeFiles/grpc_sdk_test.dir/link.txt
+  
+  # 1. ТОЧНАЯ форма upb-токена и его соседи (что именно его тянет):
+  tr ' ' '\n' < "$B" | grep -niC3 upb
 
+  # 2. кто из пакетов-зависимостей упоминает upb ВНЕ заголовков —
+  #    любой файл (.targets/.cmake/.var), не только CMakeLists.var:
+  grep -rln upb /home/user/*.lin.gcc84.shared.x86_64.*/ 2>/dev/null | grep -v '/include/'
+
+  # 3. и в генерённом дереве сборки (вдруг ссылка в cmake-конфиге):
+  grep -rin upb ~/grpc_sdk/build/x86 2>/dev/null | grep -vi binary | head
 
  find ~ ~/.nuget /tmp -maxdepth 3 -iname 'upb*' 2>/dev/null
 
