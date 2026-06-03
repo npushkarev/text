@@ -1,3 +1,5 @@
+grep -rin upb ~/grpc_sdk --include='packages.config' --include='*.nuspec' --include='*.config' 2>/dev/null
+
 
   # кто из установленных пакетов называет upb компонентом:
   grep -rHn '\bupb\b' /home/user/*/CMakeLists.var
