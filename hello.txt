@@ -1,4 +1,14 @@
-grep -rin upb ~/grpc_sdk --include='packages.config' --include='*.nuspec' --include='*.config' 2>/dev/null
+ find ~ ~/.nuget /tmp -maxdepth 3 -iname 'upb*' 2>/dev/null
+
+  # B. старый link.txt в .build кэширует -lupb — снести и пере-КОНФИГУРИРОВАТЬ
+  #    (инкрементальный make перелинкует по старой строке!):
+  rm -rf ~/grpc_sdk/.build
+  # ... твой обычный скрипт сборки grpc_sdk
+
+  # проверка сразу после configure, ДО линка — должно быть 0:
+  grep -c upb ~/grpc_sdk/.build/lin.gcc.shared.x64/grpc_sdk/CMakeFiles/grpc_sdk_test.dir/link.txt
+
+
 
 
   # кто из установленных пакетов называет upb компонентом:
