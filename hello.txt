@@ -1,3 +1,10 @@
+ cmake -S . -B .build/lin.gcc.shared.x64 \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_SHARED_LIBS=ON \
+    -DCUSTOM_DEFINES="" \
+    -G "Unix Makefiles"
+
+
  find ~ ~/.nuget /tmp -maxdepth 3 -iname 'upb*' 2>/dev/null
 
   # B. старый link.txt в .build кэширует -lupb — снести и пере-КОНФИГУРИРОВАТЬ
