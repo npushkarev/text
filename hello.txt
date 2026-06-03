@@ -1,3 +1,10 @@
+
+  B=~/grpc_sdk/build/x86/grpc_sdk/CMakeFiles/grpc_sdk_test.dir/link.txt
+
+  grep -rIn upb ~/grpc_sdk --exclude-dir=build --exclude-dir=.build --exclude-dir=.git 2>/dev/null
+  grep -in upb /home/user/grpc.lin.gcc84.shared.x86_64.1.60.1.1/build/native/*.targets 2>/dev/null
+  grep -oE '\-L[^ ]+' "$B"        # есть ли -L каталоги, куда положить libupb.a
+
   # 1. ЛЮБОЙ текстовый файл в исходниках grpc_sdk с upb (без фильтров по типу, без build/):
   grep -rIn upb ~/grpc_sdk --exclude-dir=build --exclude-dir=.build --exclude-dir=.git 2>/dev/null
 
