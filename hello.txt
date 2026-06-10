@@ -1,69 +1,11 @@
-
-  B=~/grpc_sdk/build/x86/grpc_sdk/CMakeFiles/grpc_sdk_test.dir/link.txt
-
-  grep -rIn upb ~/grpc_sdk --exclude-dir=build --exclude-dir=.build --exclude-dir=.git 2>/dev/null
-  grep -in upb /home/user/grpc.lin.gcc84.shared.x86_64.1.60.1.1/build/native/*.targets 2>/dev/null
-  grep -oE '\-L[^ ]+' "$B"        # есть ли -L каталоги, куда положить libupb.a
-
-  # 1. ЛЮБОЙ текстовый файл в исходниках grpc_sdk с upb (без фильтров по типу, без build/):
-  grep -rIn upb ~/grpc_sdk --exclude-dir=build --exclude-dir=.build --exclude-dir=.git 2>/dev/null
-
-  # 2. устаревший ли .targets у grpc-слота 1.60.1.1 (CMakeLists.var чист, а .targets — нет?):
-  grep -in upb /home/user/grpc.lin.gcc84.shared.x86_64.1.60.1.1/build/native/*.targets 2>/dev/null
-
-
- B=~/grpc_sdk/build/x86/grpc_sdk/CMakeFiles/grpc_sdk_test.dir/link.txt
+  MSI‑установщик (ставится в C:\Strawberry — ровно то, что профиль подхватывает фолбэком):
+  - https://strawberryperl.com/download/5.32.1.1/strawberry-perl-5.32.1.1-64bit.msi
   
-  # 1. ТОЧНАЯ форма upb-токена и его соседи (что именно его тянет):
-  tr ' ' '\n' < "$B" | grep -niC3 upb
+  Установить как есть (по умолчанию C:\Strawberry). Появится C:\Strawberry\perl\bin\perl.exe.
 
-  # 2. кто из пакетов-зависимостей упоминает upb ВНЕ заголовков —
-  #    любой файл (.targets/.cmake/.var), не только CMakeLists.var:
-  grep -rln upb /home/user/*.lin.gcc84.shared.x86_64.*/ 2>/dev/null | grep -v '/include/'
+  3. NASM 2.16.01 (для openssl asm) — это zip, без установщика
 
-  # 3. и в генерённом дереве сборки (вдруг ссылка в cmake-конфиге):
-  grep -rin upb ~/grpc_sdk/build/x86 2>/dev/null | grep -vi binary | head
+  - https://www.nasm.us/pub/nasm/releasebuilds/2.16.01/win64/nasm-2.16.01-win64.zip
 
- find ~ ~/.nuget /tmp -maxdepth 3 -iname 'upb*' 2>/dev/null
-
-  # B. старый link.txt в .build кэширует -lupb — снести и пере-КОНФИГУРИРОВАТЬ
-  #    (инкрементальный make перелинкует по старой строке!):
-  rm -rf ~/grpc_sdk/.build
-  # ... твой обычный скрипт сборки grpc_sdk
-
-  # проверка сразу после configure, ДО линка — должно быть 0:
-  grep -c upb ~/grpc_sdk/.build/lin.gcc.shared.x64/grpc_sdk/CMakeFiles/grpc_sdk_test.dir/link.txt
-
-
-
-
-  # кто из установленных пакетов называет upb компонентом:
-  grep -rHn '\bupb\b' /home/user/*/CMakeLists.var
-
-  # ссылается ли сам grpc_sdk на upb (его CMake / nuget-шаблоны):
-  grep -rHn upb ~/grpc_sdk --include='*.cmake*' --include='CMakeLists.txt' --include='*.in'
-
-  # точное место -lupb в падающей строке линковки:
-  tr ' ' '\n' < ~/grpc_sdk/.build/lin.gcc.shared.x64/grpc_sdk/CMakeFiles/grpc_sdk_test.dir/link.txt | grep -n upb
-
-
-
-
-grep -n upb /home/user/grpc.lin.gcc84.shared.x86_64.1.60.1*/CMakeLists.var
-
-sudo SHARED=False CACHE_VOLUME=conan-protoc-fresh LEGACY_NUPKG_VERSION_SUFFIX=.1 \
-       ./test-astra/run_grpc_1601_upstream.sh protobuf
-
-
-sudo docker run --rm -v conan-protoc-fresh:/c:ro -v "$HOME/bin/1.60.1":/out grpc-tc-mirror bash -lc '
-    p=$(find /c -path "*/p/bin/protoc" -type f 2>/dev/null | head -1)
-    [ -z "$p" ] && p=$(find /c -name protoc -type f 2>/dev/null | head -1)
-    echo "$p"; file "$p"; "$p" --version 2>&1 | head -1
-    cp "$p" /out/protoc && chmod 755 /out/protoc && echo "копировано в ~/bin/1.60.1/protoc"'
-
-
- sudo docker run --rm -v conan-protoc-fresh:/c:ro -v "$HOME/bin/1.60.1":/out grpc-tc-mirror bash -lc '
-    p=$(find /c -iname protoc -type f 2>/dev/null | head -1)
-    echo "p=$p"
-    [ -z "$p" ] && { echo "=== protoc в кеше НЕТ ==="; find /c -iname "protoc*" 2>/dev/null | head; exit 0; }
-    cp "$p" /out/protoc && chmod 755 /out/protoc && echo "=== скопировано ==="'
+  Распакуй и положи nasm.exe так, чтобы получился:
+  C:\Program Files\NASM\nasm.exe
