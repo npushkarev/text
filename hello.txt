@@ -1,11 +1,2 @@
-  MSI‑установщик (ставится в C:\Strawberry — ровно то, что профиль подхватывает фолбэком):
-  - https://strawberryperl.com/download/5.32.1.1/strawberry-perl-5.32.1.1-64bit.msi
-  
-  Установить как есть (по умолчанию C:\Strawberry). Появится C:\Strawberry\perl\bin\perl.exe.
-
-  3. NASM 2.16.01 (для openssl asm) — это zip, без установщика
-
-  - https://www.nasm.us/pub/nasm/releasebuilds/2.16.01/win64/nasm-2.16.01-win64.zip
-
-  Распакуй и положи nasm.exe так, чтобы получился:
-  C:\Program Files\NASM\nasm.exe
+ FRESH_VOLUME=1 ./test-astra/smoke_proget_sources.sh          # zlib/1.3.1
+  PKG=re2 VERSION=20230301 ./test-astra/smoke_proget_sources.sh
