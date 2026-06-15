@@ -1,2 +1,1 @@
- IMAGE=grpc-tc-mirror VOLUME=conan-cache-proget-smoke \
-      ./test-astra/smoke_proget_sources.sh
+ PROGET_API_KEY=<key> IMAGE=grpc-tc-mirror-x86_64 ./test-astra/smoke_proget_sources.sh
