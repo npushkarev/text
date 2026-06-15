@@ -1,1 +1,2 @@
- REGISTRY=proget.inc.elara.local/main ./test-astra/test_x86_64.sh smoke
+ IMAGE=grpc-tc-mirror VOLUME=conan-cache-proget-smoke \
+      ./test-astra/smoke_proget_sources.sh
