@@ -1,1 +1,1 @@
- PROGET_API_KEY=<key> IMAGE=grpc-tc-mirror-x86_64 ./test-astra/smoke_proget_sources.sh
+ PUSH=0 NO_CACHE=1 ./test-astra/prebake_push.sh x86_64 arm arm64
