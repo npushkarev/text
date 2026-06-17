@@ -1,5 +1,6 @@
  PUSH=0 NO_CACHE=1 ./test-astra/prebake_push.sh x86_64 arm arm64
 
-export REGISTRY=proget.inc.elara.local/main
+ cd ~/conan-master/conan-recipes
+  export REGISTRY=proget.inc.elara.local/main
   FORCE_REBUILD=1 ./test-astra/test_all_profiles.sh all all
 
