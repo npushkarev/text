@@ -10,3 +10,10 @@
 sudo bash -c 'cd /home/user/conan-master && REGISTRY=proget.inc.elara.local/main PUSH=0 ./test-astra/prebake_push.sh'
 
  sudo bash -c 'cd /home/user/conan-master && ARCH=all ./test-astra/run_grpc_1601_upstream.sh'
+
+  Strawberry Perl 5.32.1.1 (portable, 64-bit, ~150 МБ):
+  https://strawberryperl.com/download/5.32.1.1/strawberry-perl-5.32.1.1-64bit-portable.zip
+  → для install_deps.bat переименовать в strawberryperl-5.32.1.1-portable.zip (на ProGet можешь залить под этим же именем).
+
+  NASM 2.16.01 (win64, ~1 МБ):
+  https://www.nasm.us/pub/nasm/releasebuilds/2.16.01/win64/nasm-2.16.01-win64.zip
