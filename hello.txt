@@ -9,4 +9,4 @@
 
 sudo bash -c 'cd /home/user/conan-master && REGISTRY=proget.inc.elara.local/main PUSH=0 ./test-astra/prebake_push.sh'
 
- sudo bash -c 'cd /home/user/conan-master && ./test-astra/smoke_build_pkg.sh all'
+ sudo bash -c 'cd /home/user/conan-master && ARCH=all ./test-astra/run_grpc_1601_upstream.sh'
