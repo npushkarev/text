@@ -17,3 +17,64 @@ sudo bash -c 'cd /home/user/conan-master && REGISTRY=proget.inc.elara.local/main
 
   NASM 2.16.01 (win64, ~1 МБ):
   https://www.nasm.us/pub/nasm/releasebuilds/2.16.01/win64/nasm-2.16.01-win64.zip
+
+
+ # === Установка Python ===
+      - name: Скачать Python с FTP-сервера
+        win_get_url:
+          url: "ftp://172.17.0.5/Distr/WinReposForInstall/Python/python-3.11.10-amd64.exe"
+          dest: "C:\\Temp\\python-3.11.10-amd64.exe"
+
+      - name: Установка Python (системно, в PATH)
+        win_command: C:\Temp\python-3.11.10-amd64.exe /quiet InstallAllUsers=1 PrependPath=1 Include_pip=1
+        register: python_install_result
+        failed_when: python_install_result.rc != 0 and python_install_result.rc != 3010
+
+  # === Установка NASM ===
+      - name: Скачать NASM с FTP-сервера
+        win_get_url:
+          url: "ftp://172.17.0.5/Distr/WinReposForInstall/NASM/nasm-2.16.01-win64.zip"
+          dest: "C:\\Temp\\nasm.zip"
+
+      - name: Распаковка NASM во временную папку
+        community.windows.win_unzip:
+          src: C:\\Temp\\nasm.zip
+          dest: C:\\Temp\\nasm_extract
+          remote_src: yes
+
+      # zip распаковывается в подпапку nasm-2.16.01 — кладём nasm.exe плоско,
+      # чтобы путь совпал с fallback профиля (C:\Program Files\NASM)
+      - name: Скопировать NASM в C:\Program Files\NASM
+        win_copy:
+          src: C:\\Temp\\nasm_extract\\nasm-2.16.01\\
+          dest: C:\\Program Files\\NASM\\
+          remote_src: yes
+
+      - name: Добавить путь к NASM в системный PATH
+        win_path:
+          name: Path
+          elements: C:\Program Files\NASM
+          scope: machine
+
+  # === Установка Strawberry Perl ===
+      - name: Скачать Strawberry Perl с FTP-сервера
+        win_get_url:
+          url: "ftp://172.17.0.5/Distr/WinReposForInstall/Perl/strawberry-perl-5.32.1.1-64bit-portable.zip"
+          dest: "C:\\Temp\\strawberry-perl.zip"
+
+      # portable-zip даёт perl\, c\ в корне -> C:\Strawberry\perl\bin\perl.exe
+      - name: Распаковка Strawberry Perl в C:\Strawberry
+        community.windows.win_unzip:
+          src: C:\\Temp\\strawberry-perl.zip
+          dest: C:\\Strawberry
+          remote_src: yes
+  
+      - name: Добавить пути Strawberry Perl в системный PATH
+        win_path:
+          name: Path
+          elements:
+            - C:\Strawberry\perl\bin
+            - C:\Strawberry\perl\site\bin
+            - C:\Strawberry\c\bin
+          scope: machine
+
