@@ -1,4 +1,7 @@
-  sudo docker login proget.inc.elara.local          # один раз, нужны push-права на main/library
+ARCH=arm ./test-astra/run_grpc_1601_upstream.sh 
+
+
+sudo docker login proget.inc.elara.local          # один раз, нужны push-права на main/library
   sudo bash -c 'cd /home/user/conan-master && ./test-astra/prebake_push.sh'
 
 
