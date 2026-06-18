@@ -1,4 +1,8 @@
- sudo bash -c 'cd /home/user/conan-master && ARCH=all ./test-astra/run_grpc_1601_upstream.sh'
+ sudo bash -c 'cd /home/user/conan-master && SKIP_CACHE_CLEAN=1 ARCH=arm ./test-astra/run_grpc_1601_upstream.sh'
+
+
+
+sudo bash -c 'cd /home/user/conan-master && ARCH=all ./test-astra/run_grpc_1601_upstream.sh'
 
 
  PUSH=0 NO_CACHE=1 ./test-astra/prebake_push.sh x86_64 arm arm64
