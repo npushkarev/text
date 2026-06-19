@@ -1,3 +1,7 @@
+ sudo docker login proget.inc.elara.local
+  sudo bash -c 'cd /home/user/conan-master && ./test-astra/prebake_push.sh arm'
+
+
 ARCH=arm ./test-astra/run_grpc_1601_upstream.sh 
 
 
