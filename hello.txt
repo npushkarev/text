@@ -1,3 +1,15 @@
+ # Build Conan ARM:
+  output-grpc-1601-arm/*.nupkg => arm
+  
+  # Build Conan x86_64:
+  output-grpc-1601-x86_64/*.nupkg => x86_64
+  
+  # Build Conan ARM64:
+  output-grpc-1601-arm64/*.nupkg => arm64
+  
+
+
+
  sudo docker login proget.inc.elara.local
   sudo bash -c 'cd /home/user/conan-master && ./test-astra/prebake_push.sh arm'
 
