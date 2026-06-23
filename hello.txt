@@ -10,3 +10,12 @@ openssl s_client -starttls smtp -connect msk.elara.ru:587 -cipher 'aRSA' -crlf <
 JAVA=$(ls -l /proc/$(cat /data/atlassian/application-data/bitbucket/log/../bitbucket.pid 2>/dev/null || pgrep -f bitbucket | head -1)/exe 2>/dev/null | grep -oP '\-> \K.*')
 echo "$JAVA"
 "$JAVA" -version 2>&1
+
+
+cp /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh \
+   /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh.bak-$(date +%F)
+
+
+grep -n "JVM_SUPPORT_RECOMMENDED_ARGS=" /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh
+
+JVM_SUPPORT_RECOMMENDED_ARGS="-Dmail.smtp.ssl.protocols=TLSv1.2 -Djdk.tls.client.cipherSuites=TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
