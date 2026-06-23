@@ -30,3 +30,5 @@ systemctl restart atlbitbucket
 
 
 tail -30 /data/atlassian/application-data/bitbucket/log/atlassian-bitbucket-mail.log
+
+ps aux | grep '[b]itbucket' | grep -o 'cipherSuites=[^ ]*'
