@@ -69,3 +69,6 @@ ps aux | grep '[j]ira' | tr ' ' '\n' | grep -E 'mail.smtp|cipherSuites|namedGrou
 
 echo 'print("AES max: " + javax.crypto.Cipher.getMaxAllowedKeyLength("AES"))' | /opt/atlassian/jira/jre/bin/jjs
 echo 'print("AES max: " + javax.crypto.Cipher.getMaxAllowedKeyLength("AES"))' | /opt/atlassian/bitbucket/5.13.1/jre/bin/jjs
+
+grep -A3 "jdk.tls.disabledAlgorithms" /opt/atlassian/bitbucket/5.13.1/jre/lib/security/java.security
+grep -A3 "jdk.tls.disabledAlgorithms" /opt/atlassian/jira/jre/lib/security/java.security
