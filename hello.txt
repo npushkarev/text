@@ -1,2 +1,5 @@
 ps aux | grep -i bitbucket | grep -oP 'bitbucket\.home=\K[^ ]+'
 tail -50 /data/atlassian/application-data/bitbucket/log/atlassian-bitbucket-mail.log
+
+
+openssl s_client -starttls smtp -connect msk.elara.ru:587 -crlf 2>/dev/null | grep -E "Protocol|Cipher"
