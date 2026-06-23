@@ -59,3 +59,5 @@ sed -i 's#\(JVM_SUPPORT_RECOMMENDED_ARGS="[^"]*\)"#\1 -Dmail.smtp.ssl.protocols=
 ps aux | grep '[b]itbucket' | tr ' ' '\n' | grep -E 'mail.smtp|cipherSuites|namedGroups|starttls'
 
 grep -i "crypto.policy" /opt/atlassian/bitbucket/5.13.1/jre/lib/security/java.security
+
+ps aux | grep '[j]ira' | grep -oP '\S+/bin/java' | head -1
