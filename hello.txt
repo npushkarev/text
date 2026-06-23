@@ -40,3 +40,5 @@ sed -i 's#\(JVM_SUPPORT_RECOMMENDED_ARGS="[^"]*\)"#\1 -Djdk.tls.namedGroups=secp
 tail -5 /data/atlassian/application-data/bitbucket/log/atlassian-bitbucket-mail.log
 
 ps aux | grep '[c]onfluence' | tr ' ' '\n' | grep -E '^-D'
+
+ps aux | grep '[c]onfluence' | grep -o '/[^ ]*/bin/java' | head -1
