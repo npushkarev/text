@@ -52,3 +52,6 @@ sed -i 's#\(JVM_SUPPORT_RECOMMENDED_ARGS="[^"]*\)"#\1 -Dmail.smtp.ssl.protocols=
 ps aux | grep '[b]itbucket' | tr ' ' '\n' | grep -E 'mail.smtp|cipherSuites|namedGroups|starttls'
 
 tail -f /data/atlassian/application-data/bitbucket/log/atlassian-bitbucket-mail.log
+
+\cp -f /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh.bak-2026-06-23 /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh
+sed -i 's#\(JVM_SUPPORT_RECOMMENDED_ARGS="[^"]*\)"#\1 -Dmail.smtp.ssl.protocols=TLSv1.2 -Dmail.smtp.starttls.enable=true -Dmail.smtp.starttls.required=true"#' /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh
