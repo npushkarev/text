@@ -66,3 +66,5 @@ ps aux | grep '[j]ira' | tr ' ' '\n' | grep -E 'mail.smtp|cipherSuites|namedGrou
 
 
 /opt/atlassian/jira/jre/bin/jrunscript -e 'print("AES max: " + javax.crypto.Cipher.getMaxAllowedKeyLength("AES"))'
+
+echo 'print("AES max: " + javax.crypto.Cipher.getMaxAllowedKeyLength("AES"))' | /opt/atlassian/jira/jre/bin/jjs
