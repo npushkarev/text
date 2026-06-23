@@ -63,3 +63,8 @@ grep -i "crypto.policy" /opt/atlassian/bitbucket/5.13.1/jre/lib/security/java.se
 ps aux | grep '[j]ira' | grep -oP '\S+/bin/java' | head -1
 
 ps aux | grep '[j]ira' | tr ' ' '\n' | grep -E 'mail.smtp|cipherSuites|namedGroups|starttls'
+
+
+echo 'public class T{public static void main(String[] a)throws Exception{System.out.println("AES max: "+javax.crypto.Cipher.getMaxAllowedKeyLength("AES"));}}' > /tmp/Tj.java
+/opt/atlassian/jira/jre/bin/javac /tmp/Tj.java -d /tmp
+/opt/atlassian/jira/jre/bin/java -cp /tmp Tj
