@@ -1,2 +1,1 @@
-grep -iE "MessagingException|AuthenticationFailed|SSLHandshake|smtp|javax.mail" \
-  $BITBUCKET_HOME/log/atlassian-bitbucket.log | tail -40
+ps aux | grep -i bitbucket | grep -oP 'bitbucket\.home=\K[^ ]+'
