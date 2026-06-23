@@ -34,3 +34,5 @@ tail -30 /data/atlassian/application-data/bitbucket/log/atlassian-bitbucket-mail
 ps aux | grep '[b]itbucket' | grep -o 'cipherSuites=[^ ]*'
 
 echo | openssl s_client -starttls smtp -connect msk.elara.ru:587 2>/dev/null | openssl x509 -noout -text | grep -A2 "Public Key Algorithm\|ASN1 OID\|NIST CURVE"
+
+sed -i 's#\(JVM_SUPPORT_RECOMMENDED_ARGS="[^"]*\)"#\1 -Djdk.tls.namedGroups=secp384r1,secp256r1"#' /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh
