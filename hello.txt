@@ -27,3 +27,6 @@ grep -n "JVM_SUPPORT_RECOMMENDED_ARGS=" /opt/atlassian/bitbucket/5.13.1/bin/_sta
 
 cp /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh.bak2-* /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh
 systemctl restart atlbitbucket
+
+
+tail -30 /data/atlassian/application-data/bitbucket/log/atlassian-bitbucket-mail.log
