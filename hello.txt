@@ -61,3 +61,5 @@ ps aux | grep '[b]itbucket' | tr ' ' '\n' | grep -E 'mail.smtp|cipherSuites|name
 grep -i "crypto.policy" /opt/atlassian/bitbucket/5.13.1/jre/lib/security/java.security
 
 ps aux | grep '[j]ira' | grep -oP '\S+/bin/java' | head -1
+
+ps aux | grep '[j]ira' | tr ' ' '\n' | grep -E 'mail.smtp|cipherSuites|namedGroups|starttls'
