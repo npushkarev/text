@@ -5,3 +5,8 @@ tail -50 /data/atlassian/application-data/bitbucket/log/atlassian-bitbucket-mail
 openssl s_client -starttls smtp -connect msk.elara.ru:587 -crlf 2>/dev/null | grep -E "Protocol|Cipher"
 
 openssl s_client -starttls smtp -connect msk.elara.ru:587 -cipher 'aRSA' -crlf </dev/null 2>&1 | grep -E "Protocol|Cipher|handshake|alert"
+
+
+JAVA=$(ls -l /proc/$(cat /data/atlassian/application-data/bitbucket/log/../bitbucket.pid 2>/dev/null || pgrep -f bitbucket | head -1)/exe 2>/dev/null | grep -oP '\-> \K.*')
+echo "$JAVA"
+"$JAVA" -version 2>&1
