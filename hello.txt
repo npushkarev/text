@@ -20,4 +20,7 @@ grep -n "JVM_SUPPORT_RECOMMENDED_ARGS=" /opt/atlassian/bitbucket/5.13.1/bin/_sta
 
 JVM_SUPPORT_RECOMMENDED_ARGS="-Dmail.smtp.ssl.protocols=TLSv1.2 -Djdk.tls.client.cipherSuites=TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
 
+
+sed -i 's#\(JVM_SUPPORT_RECOMMENDED_ARGS="[^"]*\)"#\1 -Dmail.smtp.ssl.protocols=TLSv1.2 -Djdk.tls.client.cipherSuites=TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"#' /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh
+
 grep -n "JVM_SUPPORT_RECOMMENDED_ARGS=" /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh
