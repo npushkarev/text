@@ -38,3 +38,5 @@ echo | openssl s_client -starttls smtp -connect msk.elara.ru:587 2>/dev/null | o
 sed -i 's#\(JVM_SUPPORT_RECOMMENDED_ARGS="[^"]*\)"#\1 -Djdk.tls.namedGroups=secp384r1,secp256r1"#' /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh
 
 tail -5 /data/atlassian/application-data/bitbucket/log/atlassian-bitbucket-mail.log
+
+ps aux | grep '[c]onfluence' | tr ' ' '\n' | grep -E '^-D'
