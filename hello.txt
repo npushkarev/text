@@ -72,3 +72,5 @@ echo 'print("AES max: " + javax.crypto.Cipher.getMaxAllowedKeyLength("AES"))' | 
 
 grep -A3 "jdk.tls.disabledAlgorithms" /opt/atlassian/bitbucket/5.13.1/jre/lib/security/java.security
 grep -A3 "jdk.tls.disabledAlgorithms" /opt/atlassian/jira/jre/lib/security/java.security
+
+http://jira.inc.elara.local/secure/admin/TimeTrackingAdmin!default.jspa
