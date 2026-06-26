@@ -20,18 +20,20 @@ $mail.Display()
 
 
 
-Сначала узнай имя группы Bitbucket (если не знаешь):
-Get-ADGroup -Filter * | Where-Object { $_.Name -match "bitbucket|git|dev" } | Select-Object Name
-Нашёл нужную — подставь её имя:
-$emails = Get-ADGroupMember -Identity "ИМЯ_ГРУППЫ" -Recursive |
-          Get-ADUser -Properties mail |
-          Where-Object { $_.mail } |
-          ForEach-Object { $_.mail } |
-          Sort-Object -Unique
+$bb   = "http://bitbucket.inc.elara.local"      # адрес Bitbucket (как в браузере)
+$user = "ТВОЙ_АДМИН_ЛОГИН"                       # админ Bitbucket
+$pass = Read-Host "Пароль админа Bitbucket" -AsSecureString
+$bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($pass)
+$plain= [Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
+$h    = @{ Authorization = "Basic " + [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("$user`:$plain")) }
+
+$emails = @(); $start = 0
+do {
+  $r = Invoke-RestMethod -Headers $h -Uri "$bb/rest/api/1.0/admin/users?limit=1000&start=$start"
+  $emails += $r.values | Where-Object { $_.emailAddress } | ForEach-Object { $_.emailAddress }
+  $start = $r.nextPageStart
+} while (-not $r.isLastPage)
+
+$emails = $emails | Sort-Object -Unique
 "Найдено: $($emails.Count)"
 $emails
-
-Если отдельной группы нет — все активные с почтой:
-$emails = Get-ADUser -Filter {Enabled -eq $true -and mail -like "*"} -Properties mail |
-          ForEach-Object { $_.mail } | Sort-Object -Unique
-"Найдено: $($emails.Count)"
