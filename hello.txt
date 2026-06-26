@@ -89,3 +89,33 @@ JRE=/opt/atlassian/bitbucket/5.13.1/jre   # на Jira: /opt/atlassian/jira/jre
 "$JRE/bin/java" -version
 grep -A3 'jdk.tls.disabledAlgorithms' "$JRE/lib/security/java.security"
 
+
+
+
+
+
+
+Шаг 1 — на Confluence-сервере (read-only, упаковать JRE):
+tar -czf /tmp/jre-8u202.tar.gz -C /opt/atlassian/confluence jre
+ls -lh /tmp/jre-8u202.tar.gz
+
+Шаг 2 — перекинь /tmp/jre-8u202.tar.gz на Bitbucket-сервер (FileZilla/scp), например в /root/.
+
+Шаг 3 — на Bitbucket-сервере забери скрипты из репо и выполни swap:
+cd /root && git clone https://github.com/HYUEHFJKhfjklkej/bitbucket-smtp-ecdsa-tls-fix.git fix && cd fix
+cp config.env.example config.env
+# в config.env пропиши:
+#   NEW_JRE_SRC="/root/jre-8u202.tar.gz"
+#   BB_VERSION="5.13.1"
+$EDITOR config.env
+
+./scripts/10-jre-swap.sh stage    # распакует и покажет java -version, БЕЗ рестарта
+./scripts/10-jre-swap.sh swap     # бэкап старой 8u172 + переключение + рестарт (спросит YES)
+
+▎ swap сделает бэкап старой JRE (jre.orig-<ts>, не удаляет), переключит, честно остановит-запустит Bitbucket (даунтайм 1–3 мин) и запишет манифест.
+
+Шаг 4 — проверка: Bitbucket → Admin → Mail server → Test. Должно уйти.
+
+Если что-то не так — мгновенный откат:
+./scripts/11-jre-rollback.sh      # вернёт оригинальную 8u172 и перезапустит
+
