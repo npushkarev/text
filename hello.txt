@@ -1,128 +1,35 @@
-tail -n 60 /data/atlassian/application-data/bitbucket/log/atlassian-bitbucket-mail.log
+JRE=/opt/atlassian/bitbucket/5.13.1/jre ; RELAY=msk.elara.ru ; PORT=587
 
-ps aux | grep '[b]itbucket' | tr ' ' '\n' | grep -E '/jre|/bin/java' | head
+echo "=== 1. AES max на ЖИВОЙ JRE (unlimited?) ==="
+echo 'print("AES="+javax.crypto.Cipher.getMaxAllowedKeyLength("AES"))' | "$JRE/bin/jjs"
+echo "=== crypto.policy + disabledAlgorithms ==="
+grep -E 'crypto.policy|jdk.tls.disabledAlgorithms' "$JRE/lib/security/java.security"
 
-tar -czf /root/jre-8u172-backup-$(date +%F-%H%M%S).tar.gz -C /opt/atlassian/bitbucket/5.13.1 jre && ls -lh /root/jre-8u172-backup-*.tar.gz
+echo "=== 2. какие ECDSA-сьюты релей реально предлагает этому хосту ==="
+for c in ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-ECDSA-AES128-SHA256 \
+         ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-ECDSA-AES256-SHA384 \
+         ECDHE-RSA-AES128-GCM-SHA256 ECDHE-RSA-AES256-GCM-SHA384; do
+  printf '%-34s ' "$c"
+  echo | openssl s_client -starttls smtp -connect "$RELAY:$PORT" -cipher "$c" 2>/dev/null \
+    | grep -qE "Cipher *: *$c" && echo OFFERED || echo no
+done
 
-ps aux | grep -i bitbucket | grep -oP 'bitbucket\.home=\K[^ ]+'
-tail -50 /data/atlassian/application-data/bitbucket/log/atlassian-bitbucket-mail.log
-
-
-openssl s_client -starttls smtp -connect msk.elara.ru:587 -crlf 2>/dev/null | grep -E "Protocol|Cipher"
-
-openssl s_client -starttls smtp -connect msk.elara.ru:587 -cipher 'aRSA' -crlf </dev/null 2>&1 | grep -E "Protocol|Cipher|handshake|alert"
-
-
-JAVA=$(ls -l /proc/$(cat /data/atlassian/application-data/bitbucket/log/../bitbucket.pid 2>/dev/null || pgrep -f bitbucket | head -1)/exe 2>/dev/null | grep -oP '\-> \K.*')
-echo "$JAVA"
-"$JAVA" -version 2>&1
-
-
-cp /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh \
-   /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh.bak-$(date +%F)
-
-
-grep -n "JVM_SUPPORT_RECOMMENDED_ARGS=" /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh
-
-JVM_SUPPORT_RECOMMENDED_ARGS="-Dmail.smtp.ssl.protocols=TLSv1.2 -Djdk.tls.client.cipherSuites=TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
-
-
-sed -i 's#\(JVM_SUPPORT_RECOMMENDED_ARGS="[^"]*\)"#\1 -Dmail.smtp.ssl.protocols=TLSv1.2 -Djdk.tls.client.cipherSuites=TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"#' /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh
-
-grep -n "JVM_SUPPORT_RECOMMENDED_ARGS=" /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh
-
-cp /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh.bak2-* /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh
-systemctl restart atlbitbucket
-
-
-tail -30 /data/atlassian/application-data/bitbucket/log/atlassian-bitbucket-mail.log
-
-ps aux | grep '[b]itbucket' | grep -o 'cipherSuites=[^ ]*'
-
-echo | openssl s_client -starttls smtp -connect msk.elara.ru:587 2>/dev/null | openssl x509 -noout -text | grep -A2 "Public Key Algorithm\|ASN1 OID\|NIST CURVE"
-
-sed -i 's#\(JVM_SUPPORT_RECOMMENDED_ARGS="[^"]*\)"#\1 -Djdk.tls.namedGroups=secp384r1,secp256r1"#' /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh
-
-tail -5 /data/atlassian/application-data/bitbucket/log/atlassian-bitbucket-mail.log
-
-ps aux | grep '[c]onfluence' | tr ' ' '\n' | grep -E '^-D'
-
-ps aux | grep '[c]onfluence' | grep -o '/[^ ]*/bin/java' | head -1
-
-
-
-cp /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh.bak-2026-06-23 /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh
-sed -i 's#\(JVM_SUPPORT_RECOMMENDED_ARGS="[^"]*\)"#\1 -Dmail.smtp.ssl.protocols=TLSv1.2 -Dmail.smtp.starttls.enable=true -Dmail.smtp.starttls.required=true"#' /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh
-
-
-ps aux | grep '[b]itbucket' | tr ' ' '\n' | grep -E 'mail.smtp|cipherSuites|namedGroups|starttls'
-
-tail -f /data/atlassian/application-data/bitbucket/log/atlassian-bitbucket-mail.log
-
-\cp -f /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh.bak-2026-06-23 /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh
-sed -i 's#\(JVM_SUPPORT_RECOMMENDED_ARGS="[^"]*\)"#\1 -Dmail.smtp.ssl.protocols=TLSv1.2 -Dmail.smtp.starttls.enable=true -Dmail.smtp.starttls.required=true"#' /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh
-
-ps aux | grep '[b]itbucket' | tr ' ' '\n' | grep -E 'mail.smtp|cipherSuites|namedGroups|starttls'
-
-grep -i "crypto.policy" /opt/atlassian/bitbucket/5.13.1/jre/lib/security/java.security
-
-ps aux | grep '[j]ira' | grep -oP '\S+/bin/java' | head -1
-
-ps aux | grep '[j]ira' | tr ' ' '\n' | grep -E 'mail.smtp|cipherSuites|namedGroups|starttls'
-
-
-/opt/atlassian/jira/jre/bin/jrunscript -e 'print("AES max: " + javax.crypto.Cipher.getMaxAllowedKeyLength("AES"))'
-
-echo 'print("AES max: " + javax.crypto.Cipher.getMaxAllowedKeyLength("AES"))' | /opt/atlassian/jira/jre/bin/jjs
-echo 'print("AES max: " + javax.crypto.Cipher.getMaxAllowedKeyLength("AES"))' | /opt/atlassian/bitbucket/5.13.1/jre/bin/jjs
-
-grep -A3 "jdk.tls.disabledAlgorithms" /opt/atlassian/bitbucket/5.13.1/jre/lib/security/java.security
-grep -A3 "jdk.tls.disabledAlgorithms" /opt/atlassian/jira/jre/lib/security/java.security
-
-grep -iE "SCON-107|smartcommit|smart commit|worklog" /путь/atlassian-jira.log | tail -40
-
-
-
-
-Что прогнать (на КАЖДОМ сервере, вывод сюда)
-
-1) Что релей отдаёт именно этому серверу (тот же IP, что у приложения):
-echo | openssl s_client -starttls smtp -connect <RELAY_IP>:587 2>/dev/null \
-  | grep -E 'Protocol|Cipher|Peer signature type|Server Temp Key'
-
-2) Что умеет локальная JRE этого сервера (Bitbucket: путь свой; Jira: свой):
-JRE=/opt/atlassian/bitbucket/5.13.1/jre   # на Jira: /opt/atlassian/jira/jre
-"$JRE/bin/java" -version
-grep -A3 'jdk.tls.disabledAlgorithms' "$JRE/lib/security/java.security"
-
-
-
-
-
-
-
-Шаг 1 — на Confluence-сервере (read-only, упаковать JRE):
-tar -czf /tmp/jre-8u202.tar.gz -C /opt/atlassian/confluence jre
-ls -lh /tmp/jre-8u202.tar.gz
-
-Шаг 2 — перекинь /tmp/jre-8u202.tar.gz на Bitbucket-сервер (FileZilla/scp), например в /root/.
-
-Шаг 3 — на Bitbucket-сервере забери скрипты из репо и выполни swap:
-cd /root && git clone https://github.com/HYUEHFJKhfjklkej/bitbucket-smtp-ecdsa-tls-fix.git fix && cd fix
-cp config.env.example config.env
-# в config.env пропиши:
-#   NEW_JRE_SRC="/root/jre-8u202.tar.gz"
-#   BB_VERSION="5.13.1"
-$EDITOR config.env
-
-./scripts/10-jre-swap.sh stage    # распакует и покажет java -version, БЕЗ рестарта
-./scripts/10-jre-swap.sh swap     # бэкап старой 8u172 + переключение + рестарт (спросит YES)
-
-▎ swap сделает бэкап старой JRE (jre.orig-<ts>, не удаляет), переключит, честно остановит-запустит Bitbucket (даунтайм 1–3 мин) и запишет манифест.
-
-Шаг 4 — проверка: Bitbucket → Admin → Mail server → Test. Должно уйти.
-
-Если что-то не так — мгновенный откат:
-./scripts/11-jre-rollback.sh      # вернёт оригинальную 8u172 и перезапустит
-
-tar -czf /root/jre-8u172-backup-$(date +%F-%H%M%S).tar.gz -C /opt/atlassian/bitbucket/5.13.1 jre && ls -lh /root/jre-8u172-backup-*.tar.gz
+echo "=== 3. СОБСТВЕННОЕ рукопожатие Java к релею (главное) ==="
+cat > /tmp/tls.js <<'EOF'
+var S=Java.type("java.net.Socket"),BR=Java.type("java.io.BufferedReader"),ISR=Java.type("java.io.InputStreamReader");
+var host="msk.elara.ru",port=587;
+var s=new S(host,port),i=new BR(new ISR(s.getInputStream())),o=s.getOutputStream();
+print("<"+i.readLine());
+o.write("EHLO test\r\n".getBytes());o.flush();
+var l;while((l=i.readLine())!=null){print("<"+l);if(l.indexOf("250-")!=0)break;}
+o.write("STARTTLS\r\n".getBytes());o.flush();
+print("<"+i.readLine());
+var f=Java.type("javax.net.ssl.SSLSocketFactory").getDefault()
+var ss=f.createSocket(s,host,port,true);
+ss.startHandshake();
+print("HANDSHAKE OK cipher="+ss.getSession().getCipherSuite());
+EOF
+"$JRE/bin/jjs" -J-Djavax.net.debug=ssl:handshake /tmp/tls.js 2>&1 \
+  | tee /tmp/java-tls-debug.txt \
+  | grep -iE 'Cipher Suites|named groups|supported_groups|handshake_failure|HANDSHAKE OK|Exception|fatal'
+echo "=== полный лог: /tmp/java-tls-debug.txt ==="
