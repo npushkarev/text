@@ -20,9 +20,8 @@ $mail.Display()
 
 
 
-
-В PowerShell:
-$emails = Get-ADGroupMember -Identity "stash-users" -Recursive |
+$emails = "stash-users","stash-all-users" |
+          ForEach-Object { Get-ADGroupMember -Identity $_ -Recursive } |
           Get-ADUser -Properties mail,Enabled |
           Where-Object { $_.Enabled -and $_.mail } |
           ForEach-Object { $_.mail } |
