@@ -17,3 +17,21 @@ $mail.To  = "ТВОЙ_АДРЕС@msk.elara.ru"   # себе, чтобы было
 $mail.BCC = ($emails -join ";")
 $mail.Recipients.ResolveAll() | Out-Null
 $mail.Display()
+
+
+
+Сначала узнай имя группы Bitbucket (если не знаешь):
+Get-ADGroup -Filter * | Where-Object { $_.Name -match "bitbucket|git|dev" } | Select-Object Name
+Нашёл нужную — подставь её имя:
+$emails = Get-ADGroupMember -Identity "ИМЯ_ГРУППЫ" -Recursive |
+          Get-ADUser -Properties mail |
+          Where-Object { $_.mail } |
+          ForEach-Object { $_.mail } |
+          Sort-Object -Unique
+"Найдено: $($emails.Count)"
+$emails
+
+Если отдельной группы нет — все активные с почтой:
+$emails = Get-ADUser -Filter {Enabled -eq $true -and mail -like "*"} -Properties mail |
+          ForEach-Object { $_.mail } | Sort-Object -Unique
+"Найдено: $($emails.Count)"
