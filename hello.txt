@@ -20,11 +20,12 @@ $mail.Display()
 
 
 
+По обеим группам сразу:
 $emails = "stash-users","stash-all-users" |
           ForEach-Object { Get-ADGroupMember -Identity $_ -Recursive } |
-          Get-ADUser -Properties mail,Enabled |
-          Where-Object { $_.Enabled -and $_.mail } |
-          ForEach-Object { $_.mail } |
+          Get-ADUser -Properties wWWHomePage,Enabled |
+          Where-Object { $_.Enabled -and $_.wWWHomePage -like "*@*" } |
+          ForEach-Object { $_.wWWHomePage.Trim() } |
           Sort-Object -Unique
 "Найдено: $($emails.Count)"
 $emails
