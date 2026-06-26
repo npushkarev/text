@@ -1,3 +1,5 @@
+tail -n 60 /data/atlassian/application-data/bitbucket/log/atlassian-bitbucket-mail.log
+
 ps aux | grep '[b]itbucket' | tr ' ' '\n' | grep -E '/jre|/bin/java' | head
 
 tar -czf /root/jre-8u172-backup-$(date +%F-%H%M%S).tar.gz -C /opt/atlassian/bitbucket/5.13.1 jre && ls -lh /root/jre-8u172-backup-*.tar.gz
