@@ -74,3 +74,18 @@ grep -A3 "jdk.tls.disabledAlgorithms" /opt/atlassian/bitbucket/5.13.1/jre/lib/se
 grep -A3 "jdk.tls.disabledAlgorithms" /opt/atlassian/jira/jre/lib/security/java.security
 
 grep -iE "SCON-107|smartcommit|smart commit|worklog" /путь/atlassian-jira.log | tail -40
+
+
+
+
+Что прогнать (на КАЖДОМ сервере, вывод сюда)
+
+1) Что релей отдаёт именно этому серверу (тот же IP, что у приложения):
+echo | openssl s_client -starttls smtp -connect <RELAY_IP>:587 2>/dev/null \
+  | grep -E 'Protocol|Cipher|Peer signature type|Server Temp Key'
+
+2) Что умеет локальная JRE этого сервера (Bitbucket: путь свой; Jira: свой):
+JRE=/opt/atlassian/bitbucket/5.13.1/jre   # на Jira: /opt/atlassian/jira/jre
+"$JRE/bin/java" -version
+grep -A3 'jdk.tls.disabledAlgorithms' "$JRE/lib/security/java.security"
+
