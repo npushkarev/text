@@ -1,9 +1,14 @@
 APP=$(pgrep -f 'BitbucketServerLauncher' | head -1); echo "APP PID=$APP"
 
-echo "=== TLS/SSL/cipher флаги ЖИВОГО процесса Bitbucket ==="
-tr '\0' '\n' < /proc/$APP/cmdline \
-  | grep -iE 'mail\.smtp|jdk\.tls|\bssl|cipher|namedgroup|ecdh|curve|crypto|\.protocols'
+echo "--- когда стартовал процесс ---"
+ps -o pid,lstart,etime -p "$APP"
 
-echo "=== те же флаги в стартовых скриптах ==="
-grep -rniE 'JVM_SUPPORT_RECOMMENDED_ARGS|mail\.smtp|jdk\.tls|cipher|namedGroup|ssl\.protocols|namedgroups' \
-  /opt/atlassian/bitbucket/5.13.1/bin/ 2>/dev/null
+echo "--- когда положили НОВУЮ JRE ---"
+ls -ldh --time-style=full-iso /opt/atlassian/bitbucket/5.13.1/jre/bin/java
+
+echo "--- какой java реально загружен процессом (ключевое) ---"
+ls -l /proc/$APP/exe
+
+echo "--- что сам Bitbucket записал в лог при старте ---"
+grep -iE 'JVM|Java [Vv]ersion|AdoptOpenJDK|HotSpot|1\.8\.0_' \
+  /data/atlassian/application-data/bitbucket/log/atlassian-bitbucket.log | tail -15
