@@ -1,14 +1,19 @@
-APP=$(pgrep -f 'BitbucketServerLauncher' | head -1); echo "APP PID=$APP"
+$ol   = New-Object -ComObject Outlook.Application
+$mail = $ol.CreateItem(0)
+$mail.Subject = "Плановые работы с Bitbucket в понедельник 29.06"
+$mail.Body    = @"
+Коллеги, добрый день!
 
-echo "--- когда стартовал процесс ---"
-ps -o pid,lstart,etime -p "$APP"
+В понедельник, 29 июня, с 10:00 до 11:00 (МСК) будут проводиться плановые
+технические работы на сервере Bitbucket.
 
-echo "--- когда положили НОВУЮ JRE ---"
-ls -ldh --time-style=full-iso /opt/atlassian/bitbucket/5.13.1/jre/bin/java
+В это время Bitbucket будет недоступен: веб-интерфейс, git push/pull и pull request'ы.
 
-echo "--- какой java реально загружен процессом (ключевое) ---"
-ls -l /proc/$APP/exe
+Просьба запланировать работу с учётом перерыва. О завершении сообщу дополнительно.
 
-echo "--- что сам Bitbucket записал в лог при старте ---"
-grep -iE 'JVM|Java [Vv]ersion|AdoptOpenJDK|HotSpot|1\.8\.0_' \
-  /data/atlassian/application-data/bitbucket/log/atlassian-bitbucket.log | tail -15
+Спасибо за понимание.
+"@
+$mail.To  = "ТВОЙ_АДРЕС@msk.elara.ru"   # себе, чтобы было видно отправку
+$mail.BCC = ($emails -join ";")
+$mail.Recipients.ResolveAll() | Out-Null
+$mail.Display()
