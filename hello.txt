@@ -119,3 +119,4 @@ $EDITOR config.env
 Если что-то не так — мгновенный откат:
 ./scripts/11-jre-rollback.sh      # вернёт оригинальную 8u172 и перезапустит
 
+tar -czf /root/jre-8u172-backup-$(date +%F-%H%M%S).tar.gz -C /opt/atlassian/bitbucket/5.13.1 jre && ls -lh /root/jre-8u172-backup-*.tar.gz
