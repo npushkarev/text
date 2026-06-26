@@ -1,35 +1,9 @@
-JRE=/opt/atlassian/bitbucket/5.13.1/jre ; RELAY=msk.elara.ru ; PORT=587
+APP=$(pgrep -f 'BitbucketServerLauncher' | head -1); echo "APP PID=$APP"
 
-echo "=== 1. AES max на ЖИВОЙ JRE (unlimited?) ==="
-echo 'print("AES="+javax.crypto.Cipher.getMaxAllowedKeyLength("AES"))' | "$JRE/bin/jjs"
-echo "=== crypto.policy + disabledAlgorithms ==="
-grep -E 'crypto.policy|jdk.tls.disabledAlgorithms' "$JRE/lib/security/java.security"
+echo "=== TLS/SSL/cipher флаги ЖИВОГО процесса Bitbucket ==="
+tr '\0' '\n' < /proc/$APP/cmdline \
+  | grep -iE 'mail\.smtp|jdk\.tls|\bssl|cipher|namedgroup|ecdh|curve|crypto|\.protocols'
 
-echo "=== 2. какие ECDSA-сьюты релей реально предлагает этому хосту ==="
-for c in ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-ECDSA-AES128-SHA256 \
-         ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-ECDSA-AES256-SHA384 \
-         ECDHE-RSA-AES128-GCM-SHA256 ECDHE-RSA-AES256-GCM-SHA384; do
-  printf '%-34s ' "$c"
-  echo | openssl s_client -starttls smtp -connect "$RELAY:$PORT" -cipher "$c" 2>/dev/null \
-    | grep -qE "Cipher *: *$c" && echo OFFERED || echo no
-done
-
-echo "=== 3. СОБСТВЕННОЕ рукопожатие Java к релею (главное) ==="
-cat > /tmp/tls.js <<'EOF'
-var S=Java.type("java.net.Socket"),BR=Java.type("java.io.BufferedReader"),ISR=Java.type("java.io.InputStreamReader");
-var host="msk.elara.ru",port=587;
-var s=new S(host,port),i=new BR(new ISR(s.getInputStream())),o=s.getOutputStream();
-print("<"+i.readLine());
-o.write("EHLO test\r\n".getBytes());o.flush();
-var l;while((l=i.readLine())!=null){print("<"+l);if(l.indexOf("250-")!=0)break;}
-o.write("STARTTLS\r\n".getBytes());o.flush();
-print("<"+i.readLine());
-var f=Java.type("javax.net.ssl.SSLSocketFactory").getDefault()
-var ss=f.createSocket(s,host,port,true);
-ss.startHandshake();
-print("HANDSHAKE OK cipher="+ss.getSession().getCipherSuite());
-EOF
-"$JRE/bin/jjs" -J-Djavax.net.debug=ssl:handshake /tmp/tls.js 2>&1 \
-  | tee /tmp/java-tls-debug.txt \
-  | grep -iE 'Cipher Suites|named groups|supported_groups|handshake_failure|HANDSHAKE OK|Exception|fatal'
-echo "=== полный лог: /tmp/java-tls-debug.txt ==="
+echo "=== те же флаги в стартовых скриптах ==="
+grep -rniE 'JVM_SUPPORT_RECOMMENDED_ARGS|mail\.smtp|jdk\.tls|cipher|namedGroup|ssl\.protocols|namedgroups' \
+  /opt/atlassian/bitbucket/5.13.1/bin/ 2>/dev/null
