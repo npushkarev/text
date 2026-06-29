@@ -1,3 +1,5 @@
+SMTP_PASS='ПАРОЛЬ' python3 /root/fix/smtp_relay.py --install
+
 rpm -q postfix cyrus-sasl-plain cyrus-sasl mailx
 
 1. Добавить свойство (файл создастся, если его нет):
