@@ -1,3 +1,6 @@
+PID=$(pgrep -f bitbucket | head -1)
+/opt/atlassian/bitbucket/5.13.1/jre/bin/jcmd $PID VM.system_properties | grep mail.smtp.ssl.protocols
+
 systemctl edit atlbitbucket
 впиши:
 [Service]
