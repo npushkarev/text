@@ -1,3 +1,17 @@
+1. Добавить свойство (файл создастся, если его нет):
+printf '\nmail.crypto.protocols=TLSv1.2\n' >> /data/atlassian/application-data/bitbucket/shared/bitbucket.properties
+
+2. Владелец файла:
+chown atlbitbucket:atlbitbucket /data/atlassian/application-data/bitbucket/shared/bitbucket.properties
+
+3. Проверить, что строка на месте:
+tail -3 /data/atlassian/application-data/bitbucket/shared/bitbucket.properties
+
+4. Убрать debug-спам:
+sed -i 's/ -Djavax.net.debug=ssl:handshake//g' /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh
+
+
+
 1. Бэкап и добавление свойства (BITBUCKET_HOME у тебя /data/atlassian/application-data/bitbucket):
 BBHOME=/data/atlassian/application-data/bitbucket
 cp -a "$BBHOME/shared/bitbucket.properties" "$BBHOME/shared/bitbucket.properties.bak-$(date +%F-%H%M%S)" 2>/dev/null
