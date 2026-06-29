@@ -1,3 +1,7 @@
+openssl s_client -starttls smtp -connect msk.elara.ru:587 -showcerts </dev/null 2>/dev/null | openssl x509 -outform PEM > /root/fix/msk-elara.pem
+
+openssl x509 -in /root/fix/msk-elara.pem -noout -subject -issuer
+
 PID=$(pgrep -u atlbitbucket -f 'java.*atlassian.standalone=BITBUCKET') BHOME=$(tr '\0' '\n' < /proc/$PID/cmdline | grep -oP 'bitbucket\.home=\K\S+') N=$(grep -nE 'handshake_failure' $BHOME/log/launcher.log | tail -1 | cut -d: -f1) sed -n "$((N-80)),$((N+3))p" $BHOME/log/launcher.log
 
 
