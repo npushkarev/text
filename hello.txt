@@ -1,3 +1,5 @@
+sed -i 's#\(JVM_SUPPORT_RECOMMENDED_ARGS="-Dhttp\.proxyHost[^"]*\)"#\1 -Djdk.tls.client.protocols=TLSv1.2"#' _start-webapp.sh
+
 PID=$(pgrep -u atlbitbucket -f 'java.*atlassian.standalone=BITBUCKET')
 BHOME=$(tr '\0' '\n' < /proc/$PID/cmdline | grep -oP 'bitbucket\.home=\K\S+')
 echo "BHOME=$BHOME"
