@@ -1,3 +1,5 @@
+rpm -q postfix cyrus-sasl-plain cyrus-sasl mailx
+
 1. Добавить свойство (файл создастся, если его нет):
 printf '\nmail.crypto.protocols=TLSv1.2\n' >> /data/atlassian/application-data/bitbucket/shared/bitbucket.properties
 
