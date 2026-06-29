@@ -1,69 +1,12 @@
-python3 sendmail.py --host smtp.example.com --port 465 --ssl \
-    --user bitbucket@example.com --password 'СЕКРЕТ' --to admin@example.com
 
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-sendmail.py — отправка тестового письма через SMTP так же, как это делает
-Bitbucket / Jira. Нужен, чтобы проверить почтовый сервер ОТДЕЛЬНО от приложения.
+JAVA=/opt/atlassian/bitbucket/5.13.1/jre/bin/java
 
-Работает на Python 2.7 и Python 3.x (на сервере есть оба).
+# 1. версия JRE
+$JAVA -version
 
-Примеры:
-    # STARTTLS (порт 587) — самый частый вариант
-    python3 sendmail.py --host smtp.example.com --port 587 \
-        --user bitbucket@example.com --password 'СЕКРЕТ' \
-        --to admin@example.com
-
-    # SSL/TLS (порт 465)
-    python3 sendmail.py --host smtp.example.com --port 465 --ssl \
-        --user bitbucket@example.com --password 'СЕКРЕТ' --to admin@example.com
-
-    # Без шифрования (порт 25, локальный релей)
-    python3 sendmail.py --host localhost --port 25 --no-tls \
-        --from bitbucket@example.com --to admin@example.com
-
-    # Пароль не в командной строке (чтобы не светился в history):
-    SMTP_PASSWORD='СЕКРЕТ' python3 sendmail.py --host ... --user ... --to ...
-"""
-
-import argparse
-import getpass
-import os
-import smtplib
-import ssl
-import sys
-from datetime import datetime
-from email.mime.text import MIMEText
-from email.utils import formatdate, make_msgid
-
-
-def build_args():
-    p = argparse.ArgumentParser(
-        description="Отправить тестовое письмо через SMTP (как Bitbucket/Jira).")
-    p.add_argument("--host", required=True, help="SMTP-сервер (hostname или IP)")
-    p.add_argument("--port", type=int, required=True, help="Порт (25/465/587)")
-    p.add_argument("--user", default=None,
-                   help="Логин SMTP (если сервер требует аутентификацию)")
-    p.add_argument("--password", default=None,
-                   help="Пароль SMTP. Лучше через env SMTP_PASSWORD или ввод с клавиатуры")
-    p.add_argument("--to", required=True, help="Получатель (кому слать)")
-    p.add_argument("--from", dest="mail_from", default=None,
-                   help="Отправитель. По умолчанию = --user")
-    p.add_argument("--subject", default=None, help="Тема письма")
-    p.add_argument("--body", default=None, help="Текст письма")
-
-    mode = p.add_mutually_exclusive_group()
-    mode.add_argument("--ssl", action="store_true",
-                      help="SMTPS / implicit TLS (обычно порт 465)")
-    mode.add_argument("--no-tls", action="store_true",
-                      help="Без шифрования (обычно порт 25)")
-    # по умолчанию — STARTTLS (порт 587)
-
-    p.add_argument("--insecure", action="store_true",
-                   help="Не проверять сертификат сервера (для самоподписанных)")
-    p.add_argument("--timeout", type=int, default=30, help="Таймаут, сек (по умолч. 30)")
-    p.add_argument("--debug", action="store_true", help="Печатать диалог SMTP")
+# 2. РЕШАЮЩАЯ проверка: умеет ли JRE AES-256
+/opt/atlassian/bitbucket/5.13.1/jre/bin/jrunscript \
+  -e 'println(javax.crypto.Cipher.getMaxAllowedKeyLength("AES"))'    p.add_argument("--debug", action="store_true", help="Печатать диалог SMTP")
     return p.parse_args()
 
 
