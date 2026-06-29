@@ -1,3 +1,6 @@
+PID=$(pgrep -u atlbitbucket -f 'java.*atlassian.standalone=BITBUCKET') BHOME=$(tr '\0' '\n' < /proc/$PID/cmdline | grep -oP 'bitbucket\.home=\K\S+') N=$(grep -nE 'handshake_failure' $BHOME/log/launcher.log | tail -1 | cut -d: -f1) sed -n "$((N-80)),$((N+3))p" $BHOME/log/launcher.log
+
+
 sed -i 's#\(JVM_SUPPORT_RECOMMENDED_ARGS="-Dhttp\.proxyHost[^"]*\)"#\1 -Djavax.net.debug=ssl:handshake"#' _start-webapp.sh
 grep -n 'javax.net.debug' _start-webapp.sh
 grep должен показать строку с -Djavax.net.debug=ssl:handshake.
