@@ -1,6 +1,7 @@
 PID=$(pgrep -u atlbitbucket -f 'java.*atlassian.standalone=BITBUCKET')
 BHOME=$(tr '\0' '\n' < /proc/$PID/cmdline | grep -oP 'bitbucket\.home=\K\S+')
 echo "BHOME=$BHOME"
+tail -n 0 -f $BHOME/log/atlassian-bitbucket.log
 
 # ГЛАВНОЕ: есть ли флаг в живом процессе
 tr '\0' '\n' < /proc/$PID/cmdline | grep -E 'mail.smtp.ssl.protocols|proxyHost'
