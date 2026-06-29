@@ -1,31 +1,151 @@
-$ol   = New-Object -ComObject Outlook.Application
-$mail = $ol.CreateItem(0)
-$mail.Subject = "Плановые работы с Bitbucket в понедельник 29.06"
-$mail.Body    = @"
-Коллеги, добрый день!
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+sendmail.py — отправка тестового письма через SMTP так же, как это делает
+Bitbucket / Jira. Нужен, чтобы проверить почтовый сервер ОТДЕЛЬНО от приложения.
 
-В понедельник, 29 июня, с 10:00 до 11:00 (МСК) будут проводиться плановые
-технические работы на сервере Bitbucket.
+Работает на Python 2.7 и Python 3.x (на сервере есть оба).
 
-В это время Bitbucket будет недоступен: веб-интерфейс, git push/pull и pull request'ы.
+Примеры:
+    # STARTTLS (порт 587) — самый частый вариант
+    python3 sendmail.py --host smtp.example.com --port 587 \
+        --user bitbucket@example.com --password 'СЕКРЕТ' \
+        --to admin@example.com
 
-Просьба запланировать работу с учётом перерыва. О завершении сообщу дополнительно.
+    # SSL/TLS (порт 465)
+    python3 sendmail.py --host smtp.example.com --port 465 --ssl \
+        --user bitbucket@example.com --password 'СЕКРЕТ' --to admin@example.com
 
-Спасибо за понимание.
-"@
-$mail.To  = "ТВОЙ_АДРЕС@msk.elara.ru"   # себе, чтобы было видно отправку
-$mail.BCC = ($emails -join ";")
-$mail.Recipients.ResolveAll() | Out-Null
-$mail.Display()
+    # Без шифрования (порт 25, локальный релей)
+    python3 sendmail.py --host localhost --port 25 --no-tls \
+        --from bitbucket@example.com --to admin@example.com
+
+    # Пароль не в командной строке (чтобы не светился в history):
+    SMTP_PASSWORD='СЕКРЕТ' python3 sendmail.py --host ... --user ... --to ...
+"""
+
+import argparse
+import getpass
+import os
+import smtplib
+import ssl
+import sys
+from datetime import datetime
+from email.mime.text import MIMEText
+from email.utils import formatdate, make_msgid
 
 
+def build_args():
+    p = argparse.ArgumentParser(
+        description="Отправить тестовое письмо через SMTP (как Bitbucket/Jira).")
+    p.add_argument("--host", required=True, help="SMTP-сервер (hostname или IP)")
+    p.add_argument("--port", type=int, required=True, help="Порт (25/465/587)")
+    p.add_argument("--user", default=None,
+                   help="Логин SMTP (если сервер требует аутентификацию)")
+    p.add_argument("--password", default=None,
+                   help="Пароль SMTP. Лучше через env SMTP_PASSWORD или ввод с клавиатуры")
+    p.add_argument("--to", required=True, help="Получатель (кому слать)")
+    p.add_argument("--from", dest="mail_from", default=None,
+                   help="Отправитель. По умолчанию = --user")
+    p.add_argument("--subject", default=None, help="Тема письма")
+    p.add_argument("--body", default=None, help="Текст письма")
 
-По обеим группам сразу:
-$emails = "stash-users","stash-all-users" |
-          ForEach-Object { Get-ADGroupMember -Identity $_ -Recursive } |
-          Get-ADUser -Properties wWWHomePage,Enabled |
-          Where-Object { $_.Enabled -and $_.wWWHomePage -like "*@*" } |
-          ForEach-Object { $_.wWWHomePage.Trim() } |
-          Sort-Object -Unique
-"Найдено: $($emails.Count)"
-$emails
+    mode = p.add_mutually_exclusive_group()
+    mode.add_argument("--ssl", action="store_true",
+                      help="SMTPS / implicit TLS (обычно порт 465)")
+    mode.add_argument("--no-tls", action="store_true",
+                      help="Без шифрования (обычно порт 25)")
+    # по умолчанию — STARTTLS (порт 587)
+
+    p.add_argument("--insecure", action="store_true",
+                   help="Не проверять сертификат сервера (для самоподписанных)")
+    p.add_argument("--timeout", type=int, default=30, help="Таймаут, сек (по умолч. 30)")
+    p.add_argument("--debug", action="store_true", help="Печатать диалог SMTP")
+    return p.parse_args()
+
+
+def main():
+    a = build_args()
+
+    mail_from = a.mail_from or a.user
+    if not mail_from:
+        sys.exit("Ошибка: укажите --from или --user (нужен адрес отправителя).")
+
+    # Пароль: --password  ->  env SMTP_PASSWORD  ->  спросить, если задан --user
+    password = a.password or os.environ.get("SMTP_PASSWORD")
+    if a.user and password is None:
+        password = getpass.getpass("SMTP-пароль для %s: " % a.user)
+
+    subject = a.subject or "SMTP test from %s" % os.uname()[1]
+    body = a.body or (
+        "Это тестовое письмо, отправленное скриптом sendmail.py.\n"
+        "Если вы его получили — SMTP-доставка работает.\n\n"
+        "Хост:    %s:%d\n"
+        "Режим:   %s\n"
+        "От:      %s\n"
+        "Кому:    %s\n"
+        "Время:   %s\n"
+        % (a.host, a.port,
+           "SSL" if a.ssl else ("PLAIN" if a.no_tls else "STARTTLS"),
+           mail_from, a.to, datetime.now().isoformat())
+    )
+
+    msg = MIMEText(body, "plain", "utf-8")
+    msg["Subject"] = subject
+    msg["From"] = mail_from
+    msg["To"] = a.to
+    msg["Date"] = formatdate(localtime=True)
+    msg["Message-ID"] = make_msgid()
+
+    # Контекст TLS
+    ctx = ssl.create_default_context()
+    if a.insecure:
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+
+    server = None
+    try:
+        if a.ssl:
+            server = smtplib.SMTP_SSL(a.host, a.port, timeout=a.timeout, context=ctx)
+        else:
+            server = smtplib.SMTP(a.host, a.port, timeout=a.timeout)
+
+        if a.debug:
+            server.set_debuglevel(1)
+
+        server.ehlo()
+
+        if not a.ssl and not a.no_tls:
+            # STARTTLS
+            server.starttls(context=ctx)
+            server.ehlo()
+
+        if a.user:
+            server.login(a.user, password)
+
+        server.sendmail(mail_from, [a.to], msg.as_string())
+        print("OK: письмо отправлено -> %s (через %s:%d)" % (a.to, a.host, a.port))
+        return 0
+
+    except smtplib.SMTPAuthenticationError as e:
+        sys.stderr.write("ОШИБКА аутентификации: %s\n" % e)
+        return 2
+    except smtplib.SMTPException as e:
+        sys.stderr.write("ОШИБКА SMTP: %s\n" % e)
+        return 3
+    except ssl.SSLError as e:
+        sys.stderr.write("ОШИБКА TLS/SSL (возможно handshake_failure): %s\n" % e)
+        return 4
+    except Exception as e:
+        sys.stderr.write("ОШИБКА: %s: %s\n" % (type(e).__name__, e))
+        return 1
+    finally:
+        if server is not None:
+            try:
+                server.quit()
+            except Exception:
+                pass
+
+
+if __name__ == "__main__":
+    sys.exit(main())
