@@ -1,4 +1,4 @@
-/opt/atlassian/bitbucket/5.13.1/jre/bin/jrunscript -f smtptest.js msk.elara.ru 587
+/opt/atlassian/bitbucket/5.13.1/jre/bin/jjs -scripting smtptest.js -- msk.elara.ru 587
 
 
 JAVA=/opt/atlassian/bitbucket/5.13.1/jre/bin/java
