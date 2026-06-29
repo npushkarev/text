@@ -1,3 +1,10 @@
+cd /opt/atlassian/bitbucket/5.13.1/bin
+cp _start-webapp.sh _start-webapp.sh.bak-$(date +%F-%H%M)
+sed -i '1a export JVM_SUPPORT_RECOMMENDED_ARGS="$JVM_SUPPORT_RECOMMENDED_ARGS -Dmail.smtp.ssl.protocols=TLSv1.2 -Dmail.smtp.starttls.enable=true"' _start-webapp.sh
+head -3 _start-webapp.sh
+Вторая строка вывода head должна быть наша export JVM_SUPPORT_RECOMMENDED_ARGS=....
+
+
 PID=$(pgrep -f bitbucket | head -1)
 /opt/atlassian/bitbucket/5.13.1/jre/bin/jcmd $PID VM.system_properties | grep mail.smtp.ssl.protocols
 
