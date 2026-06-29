@@ -1,3 +1,17 @@
+1. Бэкап и добавление свойства (BITBUCKET_HOME у тебя /data/atlassian/application-data/bitbucket):
+BBHOME=/data/atlassian/application-data/bitbucket
+cp -a "$BBHOME/shared/bitbucket.properties" "$BBHOME/shared/bitbucket.properties.bak-$(date +%F-%H%M%S)" 2>/dev/null
+printf '\nmail.crypto.protocols=TLSv1.2\n' >> "$BBHOME/shared/bitbucket.properties"
+chown atlbitbucket:atlbitbucket "$BBHOME/shared/bitbucket.properties"
+tail -3 "$BBHOME/shared/bitbucket.properties"
+
+2. Заодно убрать debug-спам, который мы добавляли (он сорит в launcher.log на каждом TLS-коннекте):
+sed -i 's/ -Djavax.net.debug=ssl:handshake//g' /opt/atlassian/bitbucket/5.13.1/bin/_start-webapp.sh
+
+
+
+
+
 openssl s_client -starttls smtp -connect msk.elara.ru:587 -showcerts </dev/null 2>/dev/null | openssl x509 -outform PEM > /root/fix/msk-elara.pem
 
 openssl x509 -in /root/fix/msk-elara.pem -noout -subject -issuer
