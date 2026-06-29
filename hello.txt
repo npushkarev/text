@@ -1,3 +1,4 @@
+grep -n 'JVM_SUPPORT_RECOMMENDED_ARGS' _start-webapp.sh
 sed -i '/^[[:space:]]*JVM_SUPPORT_RECOMMENDED_ARGS=/a JVM_SUPPORT_RECOMMENDED_ARGS="${JVM_SUPPORT_RECOMMENDED_ARGS} -Dmail.smtp.ssl.protocols=TLSv1.2 -Dmail.smtp.starttls.enable=true"' _start-webapp.sh
 
 cd /opt/atlassian/bitbucket/5.13.1/bin
