@@ -1,3 +1,6 @@
+python3 sendmail.py --host smtp.example.com --port 465 --ssl \
+    --user bitbucket@example.com --password 'СЕКРЕТ' --to admin@example.com
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
