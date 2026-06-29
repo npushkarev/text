@@ -1,4 +1,10 @@
-systemctl cat atlbitbucket 2>/dev/null || systemctl list-units | grep -i bitbucket
+systemctl edit atlbitbucket
+впиши:
+[Service]
+Environment="JVM_SUPPORT_RECOMMENDED_ARGS=-Dmail.smtp.ssl.protocols=TLSv1.2 -Dmail.smtp.starttls.enable=true"
+затем:
+systemctl daemon-reload
+systemctl restart atlbitbucket
 
 
 JAVA=/opt/atlassian/bitbucket/5.13.1/jre/bin/java
