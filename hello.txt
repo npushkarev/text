@@ -1,13 +1,5 @@
-set -e
-API_KEY="%ProGet.ApiKey%"
-URL="http://proget.inc.elara.local/nuget/conan/package"
-n=0
-for f in $(find all-nupkg -type f -name '*.nupkg'); do
-  n=$((n+1))
-  code=$(curl -sS -o /dev/null -w '%{http_code}' \
-    -H "X-ApiKey: $API_KEY" -H "X-NuGet-ApiKey: $API_KEY" \
-    -X PUT --upload-file "$f" "$URL")
-  echo "[$code] $(basename "$f")"
-  case "$code" in 200|201|409) ;; *) echo "FAIL"; exit 1 ;; esac
+echo "PATH=$PATH"
+for t in curl wget nuget dotnet python3 docker; do
+  printf '%s -> ' "$t"; command -v "$t" || echo MISSING
 done
-[ "$n" -gt 0 ] || { echo "нет .nupkg под all-nupkg"; exit 1; }
+echo "--- nupkg ---"; find all-nupkg -name '*.nupkg' | head
