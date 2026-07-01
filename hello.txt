@@ -1,5 +1,26 @@
-echo "PATH=$PATH"
-for t in curl wget nuget dotnet python3 docker; do
-  printf '%s -> ' "$t"; command -v "$t" || echo MISSING
-done
-echo "--- nupkg ---"; find all-nupkg -name '*.nupkg' | head
+KEY="%ProGet.ApiKey%"
+URL="http://proget.inc.elara.local/nuget/conan/package"
+python3 - "$KEY" "$URL" <<'PY'
+import sys, os, glob, urllib.request, urllib.error
+key, url = sys.argv[1], sys.argv[2]
+pkgs = sorted(glob.glob('all-nupkg/**/*.nupkg', recursive=True))
+if not pkgs:
+    print('нет .nupkg под all-nupkg'); sys.exit(1)
+rc = 0
+for f in pkgs:
+    with open(f, 'rb') as fh:
+        req = urllib.request.Request(url, data=fh, method='PUT')
+        req.add_header('Content-Length', str(os.path.getsize(f)))
+        req.add_header('X-ApiKey', key)
+        req.add_header('X-NuGet-ApiKey', key)
+        try:
+            code = urllib.request.urlopen(req).getcode()
+        except urllib.error.HTTPError as e:
+            code = e.code
+        except Exception as e:
+            print('[ERR] %s: %s' % (os.path.basename(f), e)); rc = 1; continue
+    tag = 'OK' if code in (200,201) else ('SKIP' if code == 409 else 'FAIL')
+    print('[%s %s] %s' % (code, tag, os.path.basename(f)))
+    if code not in (200,201,409): rc = 1
+sys.exit(rc)
+PY
