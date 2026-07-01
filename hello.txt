@@ -1,26 +1,82 @@
 KEY="%ProGet.ApiKey%"
+  URL="http://proget.inc.elara.local/nuget/conan/package"
+  python3 - "$KEY" "$URL" <<'PY'
+  import sys, os, glob, http.client
+  from urllib.parse import urlparse
+  key, url = sys.argv[1], sys.argv[2]
+  u = urlparse(url)
+  B = '----ProGetPush7MA4YWxkTrZu0gWConanFeed'
+  pkgs = sorted(glob.glob('all-nupkg/**/*.nupkg', recursive=True))
+  if not pkgs:
+Финальный шаг 5 — multipart, стримом
+
+KEY="%ProGet.ApiKey%"
 URL="http://proget.inc.elara.local/nuget/conan/package"
 python3 - "$KEY" "$URL" <<'PY'
-import sys, os, glob, urllib.request, urllib.error
+import sys, os, glob, http.client
+from urllib.parse import urlparse
 key, url = sys.argv[1], sys.argv[2]
+u = urlparse(url)
+B = '----ProGetPush7MA4YWxkTrZu0gWConanFeed'
 pkgs = sorted(glob.glob('all-nupkg/**/*.nupkg', recursive=True))
 if not pkgs:
     print('нет .nupkg под all-nupkg'); sys.exit(1)
 rc = 0
 for f in pkgs:
-    with open(f, 'rb') as fh:
-        req = urllib.request.Request(url, data=fh, method='PUT')
-        req.add_header('Content-Length', str(os.path.getsize(f)))
-        req.add_header('X-ApiKey', key)
-        req.add_header('X-NuGet-ApiKey', key)
-        try:
-            code = urllib.request.urlopen(req).getcode()
-        except urllib.error.HTTPError as e:
-            code = e.code
-        except Exception as e:
-            print('[ERR] %s: %s' % (os.path.basename(f), e)); rc = 1; continue
-    tag = 'OK' if code in (200,201) else ('SKIP' if code == 409 else 'FAIL')
-    print('[%s %s] %s' % (code, tag, os.path.basename(f)))
+    fn = os.path.basename(f)
+    pre = ('--%s\r\nContent-Disposition: form-data; name="package"; filename="%s"\r\n'
+           'Content-Type: application/octet-stream\r\n\r\n' % (B, fn)).encode()
+    post = ('\r\n--%s--\r\n' % B).encode()
+    total = len(pre) + os.path.getsize(f) + len(post)
+    try:
+        c = http.client.HTTPConnection(u.hostname, u.port or 80, timeout=600)
+        c.putrequest('PUT', u.path, skip_accept_encoding=True)
+        c.putheader('X-ApiKey', key)
+        c.putheader('X-NuGet-ApiKey', key)
+        c.putheader('Content-Type', 'multipart/form-data; boundary=%s' % B)
+        c.putheader('Content-Length', str(total))
+        c.endheaders()
+        c.send(pre)
+        with open(f, 'rb') as fh:
+            while True:
+                b = fh.read(1048576)
+                if not b: break
+                c.send(b)
+        c.send(post)
+        r = c.getresponse(); code = r.status; r.read(); c.close()
+    except Exception as e:
+        print('[ERR] %s: %s' % (fn, e)); rc = 1; continue
+    tag = 'OK' if code in (200,201) else ('SKIP' if code==409 else 'FAIL')
+    print('[%s %s] %s' % (code, tag, fn))
     if code not in (200,201,409): rc = 1
 sys.exit(rc)
 PY
+      print('нет .nupkg под all-nupkg'); sys.exit(1)
+  rc = 0
+  for f in pkgs:
+      fn = os.path.basename(f)
+      pre = ('--%s\r\nContent-Disposition: form-data; name="package"; filename="%s"\r\n'
+             'Content-Type: application/octet-stream\r\n\r\n' % (B, fn)).encode()
+      post = ('\r\n--%s--\r\n' % B).encode()
+      total = len(pre) + os.path.getsize(f) + len(post)
+      try:
+          c = http.client.HTTPConnection(u.hostname, u.port or 80, timeout=600)
+          c.putrequest('PUT', u.path, skip_accept_encoding=True)
+          c.putheader('X-ApiKey', key)
+          c.putheader('X-NuGet-ApiKey', key)
+          c.putheader('Content-Type', 'multipart/form-data; boundary=%s' % B)
+          c.putheader('Content-Length', str(total))
+          c.endheaders()
+          c.send(pre)
+          with open(f, 'rb') as fh:
+              while True:
+                  b = fh.read(1048576)
+                  if not b: break
+                  c.send(b)
+          c.send(post)
+          r = c.getresponse(); code = r.status; r.read(); c.close()
+      except Exception as e:
+          print('[ERR] %s: %s' % (fn, e)); rc = 1; continue
+      tag = 'OK' if code in (200,201) else ('SKIP' if code==409 else 'FAIL')
+      print('[%s %s] %s' % (code, tag, fn))
+      if code not in (200,
