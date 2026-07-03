@@ -1,15 +1,7 @@
- #!/bin/bash
-  set -euo pipefail
-  export REGISTRY="proget.inc.elara.local/main"
-
-  LINE="%Conan.GrpcLine%"
-  if [ "$LINE" = "all" ]; then
-    for L in 1601 1781; do
-      ARCH=x86_64 bash ./test-astra/build_${L}_nodocker.sh
-    done
-  else
-    ARCH=x86_64 bash ./test-astra/build_${LINE}_nodocker.sh
-  fi
+#!/bin/bash
+set -euo pipefail
+export REGISTRY="proget.inc.elara.local/main"
+ARCH=x86_64 bash ./test-astra/build_%Conan.GrpcLine%_nodocker.sh
 
 Общее для всех задач (можно вписать в Description или в описание эпика/родителя IN-658):
 
