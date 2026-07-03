@@ -1,7 +1,5 @@
-#!/bin/bash
-set -euo pipefail
-export REGISTRY="proget.inc.elara.local/main"
-ARCH=x86_64 bash ./test-astra/build_%Conan.GrpcLine%_nodocker.sh
+call test-windows\run_grpc_%Conan.GrpcLine%_win.bat
+if errorlevel 1 exit /b 1
 
 Общее для всех задач (можно вписать в Description или в описание эпика/родителя IN-658):
 
