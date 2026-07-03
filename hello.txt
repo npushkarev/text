@@ -1,4 +1,4 @@
-1601, 1781, Allow multiple off, Display Prompt,
+select display='prompt' data_1='1601' data_2='1781'
 
 Общее для всех задач (можно вписать в Description или в описание эпика/родителя IN-658):
 
