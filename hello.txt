@@ -1,4 +1,8 @@
-select display='prompt' data_1='1601' data_2='1781'
+LINES="%Conan.GrpcLine%"
+[ "$LINES" = "all" ] && LINES="1601 1781"
+for L in $LINES; do
+  ARCH=x86_64 ./test-astra/run_grpc_${L}_upstream.sh || exit 1
+done
 
 Общее для всех задач (можно вписать в Description или в описание эпика/родителя IN-658):
 
