@@ -1,3 +1,5 @@
+1601, 1781, Allow multiple off, Display Prompt,
+
 Общее для всех задач (можно вписать в Description или в описание эпика/родителя IN-658):
 
 ▎ Мигрировать third-party C++ библиотеку с рукописной TeamCity-сборки на Conan 2.29 из канонического conan-recipes/<pkg>, сохранив байт-совместимость legacy .nupkg (имя, lib/native/…, .nuspec <id>, CMakeLists.var). Offline/--no-remote, исходники из <pkg>/src/*.tar.gz. Арки: x86_64, armv7hf, arm64. DoD: рецепт собирается во всех арках, deployer отдаёт legacy-.nupkg, TC-конфиг зелёный, пакет опубликован в фид conan.
