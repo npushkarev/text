@@ -1,8 +1,15 @@
-LINES="%Conan.GrpcLine%"
-[ "$LINES" = "all" ] && LINES="1601 1781"
-for L in $LINES; do
-  ARCH=x86_64 ./test-astra/run_grpc_${L}_upstream.sh || exit 1
-done
+ #!/bin/bash
+  set -euo pipefail
+  export REGISTRY="proget.inc.elara.local/main"
+
+  LINE="%Conan.GrpcLine%"
+  if [ "$LINE" = "all" ]; then
+    for L in 1601 1781; do
+      ARCH=x86_64 bash ./test-astra/build_${L}_nodocker.sh
+    done
+  else
+    ARCH=x86_64 bash ./test-astra/build_${LINE}_nodocker.sh
+  fi
 
 Общее для всех задач (можно вписать в Description или в описание эпика/родителя IN-658):
 
