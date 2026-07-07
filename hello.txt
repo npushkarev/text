@@ -1,3 +1,30 @@
+
+gtest Linux x64
+- Docker image (поле контейнера): %REGISTRY%/library/grpc-tc-mirror-x86_64:0.1.0
+- Build step → Custom script:
+ARCH=x86_64 ./test-astra/build_gtest_nodocker.sh
+- Artifact paths (General Settings):
+output-gtest-x86_64/*.nupkg => x86_64
+
+gtest Linux arm
+- Docker image: %REGISTRY%/library/grpc-tc-mirror-arm:0.1.0
+- Script: ARCH=arm ./test-astra/build_gtest_nodocker.sh
+- Artifacts: output-gtest-arm/*.nupkg => arm
+
+gtest Linux arm64
+- Docker image: %REGISTRY%/library/grpc-tc-mirror-arm64:0.1.0
+- Script: ARCH=arm64 ./test-astra/build_gtest_nodocker.sh
+- Artifacts: output-gtest-arm64/*.nupkg => arm64
+
+Windows-конфиги (2 шт.)
+
+Нативный MSVC-агент, без docker-галки. Агент заранее: MSVC-toolset + test-windows\setup.bat.
+
+gtest Win x64 — Command Line script:
+set PROFILE_NAME=win-v143-x64 & test-windows\run_gtest_win.bat
+Artifacts: output-gtest-win\*.nupkg => win-x64
+
+
 call test-windows\run_fmt_win.bat
 if errorlevel 1 exit /b 1
 
