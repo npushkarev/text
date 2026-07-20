@@ -1,3 +1,5 @@
+https://rutracker.org/forum/viewtopic.php?t=6345036
+
 
 gtest Linux x64
 - Docker image (поле контейнера): %REGISTRY%/library/grpc-tc-mirror-x86_64:0.1.0
