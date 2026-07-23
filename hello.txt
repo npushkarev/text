@@ -1,126 +1,82 @@
-В наш отдел регулярно поступают задачи, связанные с обновлением Jira. Выполнить их штатным способом мы не можем: Atlassian прекратил работу в РФ, официальный доступ к дистрибутивам и лицензиям закрыт.
+┌─────┬───────────────┬──────────────┬─────┬───────────────────────────────────────────┐
+│  #  │     Пакет     │    Версия    │ Код │            Ограничения слотов             │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 1   │ gtest         │ 1.17.0       │ GT  │ —                                         │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 2   │ fmt           │ 11.2.0       │ FM  │ —                                         │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 3   │ cjson         │ 1.7.19       │ CJ  │ —                                         │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 4   │ expat         │ 2.8.2        │ EX  │ —                                         │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 5   │ tinyxml2      │ 11.0.0       │ TI  │ —                                         │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 6   │ sqlite3       │ 3.53.3       │ SQ  │ —                                         │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 7   │ jansson       │ 2.15.1       │ JA  │ —                                         │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 8   │ jsoncpp       │ 1.9.8        │ JS  │ —                                         │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 9   │ lua           │ 5.5.0        │ LU  │ —                                         │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 10  │ libzip        │ 1.11.4       │ LZ  │ —                                         │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 11  │ nlohmann_json │ 3.12.0       │ NJ  │ —                                         │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 12  │ pthreads4w    │ 3.0.0        │ PW  │ только Wi       │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 13  │ libcurl       │ 8.21.0       │ CU  │ —               │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 14  │ libxml2       │ 2.13.8       │ XL  │ —               │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 15  │ mbedtls       │ 3.6.6        │ MB  │ —               │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 16  │ libssh2       │ 1.11.1       │ SH  │ —               │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 17  │ zeromq        │ 4.3.5        │ ZM  │ —               │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 18  │ mosquitto     │ 2.0.22       │ MQ  │ —               │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 19  │ libmodbus     │ 3.1.12       │ MD  │ —               │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 20  │ net-snmp      │ 5.9.4        │ NS  │ —               │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 21  │ libpq         │ 16.14        │ PQ  │ —               │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 22  │ xerces-c      │ 3.3.0        │ XC  │ —               │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 23  │ pcre          │ 8.45         │ PC  │ транзитив       │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 24  │ libiec61850   │ 1.6.1        │ IE  │ —               │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 25  │ mongoose      │ 7.22         │ MG  │ —               │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 26  │ nanopb        │ 0.4.9.1      │ NP  │ —               │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 27  │ soem          │ 2.0.0        │ SO  │ Linux/Win       │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 28  │ dbus          │ 1.15.8       │ DB  │ без Windo       │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 29  │ snap7         │ 1.4.2        │ SN  │ —               │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 30  │ matiec        │ 0.1.20260512 │ MT  │ без Windo       │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 31  │ qwt           │ 6.2.0        │ QW  │ Linux толагента │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 32  │ qwindowkit    │ 1.5.0        │ WK  │ Linux тол       │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 33  │ qxorm         │ 1.5.1        │ QX  │ Linux тол       │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 34  │ gflags        │ 2.3.0        │ GF  │ —               │
+├─────┼───────────────┼──────────────┼─────┼───────────────────────────────────────────┤
+│ 35  │ glog          │ 0.7.1        │ GL  │ —               │
+└─────┴───────────────┴──────────────┴─────┴───────────────────────────────────────────┘
 
-В качестве временного варианта рассматривается сборка из стороннего источника:
-https://rutracker.org/forum/viewtopic.php?t=6345036
+grpc-линии (каждая — своё поддерево GRPC_<line>_CONAN, публикует стек из 7 пакетов: grpc + protobuf + absl + re2 + cares + zlib + openssl):
 
-Прошу оценить возможность её использования и сообщить решение по двум пунктам:
-1. Проверка дистрибутива на вредоносное ПО.
-2. Допустимость развёртывания данного ПО в контуре.
-
-gtest Linux x64
-- Docker image (поле контейнера): %REGISTRY%/library/grpc-tc-mirror-x86_64:0.1.0
-- Build step → Custom script:
-ARCH=x86_64 ./test-astra/build_gtest_nodocker.sh
-- Artifact paths (General Settings):
-output-gtest-x86_64/*.nupkg => x86_64
-
-gtest Linux arm
-- Docker image: %REGISTRY%/library/grpc-tc-mirror-arm:0.1.0
-- Script: ARCH=arm ./test-astra/build_gtest_nodocker.sh
-- Artifacts: output-gtest-arm/*.nupkg => arm
-
-gtest Linux arm64
-- Docker image: %REGISTRY%/library/grpc-tc-mirror-arm64:0.1.0
-- Script: ARCH=arm64 ./test-astra/build_gtest_nodocker.sh
-- Artifacts: output-gtest-arm64/*.nupkg => arm64
-
-Windows-конфиги (2 шт.)
-
-Нативный MSVC-агент, без docker-галки. Агент заранее: MSVC-toolset + test-windows\setup.bat.
-
-gtest Win x64 — Command Line script:
-set PROFILE_NAME=win-v143-x64 & test-windows\run_gtest_win.bat
-Artifacts: output-gtest-win\*.nupkg => win-x64
-
-
-call test-windows\run_fmt_win.bat
-if errorlevel 1 exit /b 1
-
-#!/bin/bash
-set -euo pipefail
-export REGISTRY="proget.inc.elara.local/main"
-ARCH=x86_64 bash ./test-astra/build_fmt_nodocker.sh
-
-output-grpc-*-x86_64/*.nupkg => x86_64      # Build Conan x86_64
-output-grpc-*-arm/*.nupkg    => arm         # Build Conan ARM
-output-grpc-*-arm64/*.nupkg  => arm64       # Build Conan ARM64
-output-grpc-*-win\*.nupkg    => windows     # Windows x64
-
-call test-windows\run_grpc_%Conan.GrpcLine%_win.bat
-if errorlevel 1 exit /b 1
-
-Общее для всех задач (можно вписать в Description или в описание эпика/родителя IN-658):
-
-▎ Мигрировать third-party C++ библиотеку с рукописной TeamCity-сборки на Conan 2.29 из канонического conan-recipes/<pkg>, сохранив байт-совместимость legacy .nupkg (имя, lib/native/…, .nuspec <id>, CMakeLists.var). Offline/--no-remote, исходники из <pkg>/src/*.tar.gz. Арки: x86_64, armv7hf, arm64. DoD: рецепт собирается во всех арках, deployer отдаёт legacy-.nupkg, TC-конфиг зелёный, пакет опубликован в фид conan.
-▎ Relates to: IN-658
-
----
-1. gtest
-
-Summary: [Conan] Мигрировать gtest (googletest) на Conan-сборку с legacy .nupkg
-Description:
-- Рецепт gtest/ (1.14.0) → Conan, deployer → legacy-имя googletest.
-- Эталон: базовый пакет, служит smoke-харнессом (conon/ consumer).
-- DoD: googletest.*.nupkg во всех арках, байт-дифф vs legacy зелёный.
-
----
-2. zlib
-
-Summary: [Conan] Мигрировать zlib на Conan-сборку с legacy .nupkg
-Description:
-- zlib/ (1.3.0 для линии 1.60.1; 1.3.1 для 1.78.1).
-- Готчи: -lzlib → libz.a алиасится в libzlib.a (LIB_FILENAME_ALIASES); components в CMakeLists.var несут legacy-имя пакета, не upstream-basename; патч fix-cmake снимает CMAKE_DEBUG_POSTFIX="d" (портирован и на 1.3.0 — иначе Windows Debug даёт zlibd.lib ≠ zlib).
-- DoD: линки -lzlib резолвятся, Windows Release+Debug ок.
-
----
-3. abseil
-
-Summary: [Conan] Мигрировать abseil (absl) на Conan-сборку с legacy .nupkg
-Description:
-- abseil/ (20230802.1 для 1.60.1; 20250127.0 для 1.78.1) → deployer legacy-имя absl, версия 0.2.0 (LEGACY_VERSION_MAP).
-- Готчи: гранулярность компонентов — нужен крупноблочный набор (21 .a, LEGACY_LIBDIR_OVERRIDE=legacy-coarse, _aggregate_legacy_coarse), не 150 мелких; inline-namespace lts_NNNNNNNN должен совпадать с downstream; на aarch64 патч xpaclri→hint #7 (binutils 2.32) — только для 20250127.0, для 20230802.1 не нужен.
-- DoD: absl 0.2.0 (21 .a, static, с cord) собирается на x86_64/armv7/aarch64.
-
----
-4. c-ares
-
-Summary: [Conan] Мигрировать c-ares (cares) на Conan-сборку с legacy .nupkg
-Description:
-- c-ares/ (1.25.0 для 1.60.1; 1.34.6 для 1.78.1) → deployer legacy-имя cares (LEGACY_NAME_MAP["c-ares"]="cares" — дефис ломает -D…).
-- DoD: cares.*.nupkg, потребители линкуются по имени cares.
-
----
-5. re2
-
-Summary: [Conan] Мигрировать re2 на Conan-сборку с legacy .nupkg
-Description:
-- re2/ (20230301 для 1.60.1; 20251105 для 1.78.1).
-- Зависит от abseil (см. задачу #3) — inline-namespace абсл должен совпадать.
-- DoD: re2.*.nupkg во всех арках.
-
----
-6. protobuf
-
-Summary: [Conan] Мигрировать protobuf на Conan-сборку с legacy .nupkg
-Description:
-- protobuf/ (4.25.2 для 1.60.1; 5.29.6 для 1.78.1).
-- Готчи: undefined reference to absl::lts_NNNNNNNN::… = inline-namespace mismatch с absl (не cppstd); deployer создаёт alias libprotoc.a → libprotolib.a + emits оба component-имени (Elara-форк разбил libprotoc→libprotolib); *.proto зеркалятся из include/ в отдельный слой proto/ (иначе protoc падает timestamp.proto: File not found), кроме compiler/+java/.
-- DoD: protobuf.*.nupkg, protoc работает, protolib-алиас на месте.
-
----
-7. openssl
-
-Summary: [Conan] Мигрировать openssl на Conan-сборку с legacy .nupkg
-Description:
-- openssl-1x/ (1.1.1 для 1.60.1) и openssl/ (3.4.5 для 1.78.1) — две линии, name=openssl.
-- Готчи (Windows-offline): нужны perl (strawberryperl) и nasm в tools/windows/…; _perl fallback (KeyError 'strawberryperl' был только в openssl-1x).
-- DoD: openssl.*.nupkg на Linux всех арок + Windows (Strawberry Perl+NASM offline).
-
----
-8. grpc
-
-Summary: [Conan] Мигрировать grpc на Conan-сборку с legacy .nupkg (7 пакетов дерева)
-Description:
-- grpc/ (1.60.1 паритет GR910; далее 1.78.1). Тянет за собой #1–#7 (protobuf/absl/re2/cares/openssl/zlib).
-- Готчи: target_info/grpc_<ver>.yml (таблицы CMake-таргетов для cpp_info.components); _preextract_grpc_offline_deps (4 FetchContent-тарбола offline); upb вшивается в libgrpc.a (ld -r -z muldefs) + пустой libupb.a-stub (иначе grpc_sdk падает на upb); project_include форсит CMAKE_POSITION_INDEPENDENT_CODE=ON.
-- DoD: 7 legacy-.nupkg на всех арках, grpc_sdk-consumer собирается end-to-end.
+┌───────┬─────────────┬────────────────────────┐
+│ Линия │ Версия grpc │       Примечание       │
+├───────┼─────────────┼────────────────────────┤
+│ 1601  │ 1.60.1      │ паритет с легаси GR910 │
+├───────┼─────────────┼────────────────────────┤
+│ 1781  │ 1.78.1      │ новейшая линия         │
