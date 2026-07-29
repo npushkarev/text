@@ -1,4 +1,4 @@
 curl -u ПушкаревНЮ -X PUT \
   -H "Content-Type: application/xml" \
-  --data '<project id="ID_COMPONENTS"/>' \
-  "http://teamcity.inc.elara.local/httpAuth/app/rest/projects/id:ID_CONAN/parentProject"
+  --data '<project id="666"/>' \
+  "http://teamcity.inc.elara.local/httpAuth/app/rest/projects/id:777/parentProject"
