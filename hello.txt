@@ -1,4 +1,4 @@
-curl -u ПушкаревНЮ -X PUT \
-  -H "Content-Type: application/xml" \
-  --data '<project id="666"/>' \
-  "http://teamcity.inc.elara.local/httpAuth/app/rest/projects/id:777/parentProject"
+mkdir -p ~/captest
+sudo docker run --rm --cap-drop ALL -v ~/captest:/out \
+  proget.inc.elara.local/main/library/postgres:18.1 \
+  sh -c 'id -u; touch /out/x && echo WRITE-OK || echo WRITE-DENIED'
