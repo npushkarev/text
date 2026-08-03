@@ -1,3 +1,10 @@
-C=$(grep -rl "IW Transparent" /usr/local/share/ca-certificates/ /etc/ssl/certs/ 2>/dev/null | head -1)
-[ -z "$C" ] && C=$(ls /etc/ssl/certs/*.pem 2>/dev/null | head -1)
-cp "$C" iw-proxy-root.crt && echo "взят: $C"
+grep "^postgres" ~/tdc-runner-master/smoke/.out-openide/reports/postgres_integration/_infra/compose-logs.txt | tail -30
+
+И параллельно — изолированное воспроизведение ровно нашей изоляции, без compose и без ядра:
+
+docker run --rm --cap-drop ALL \
+  --cap-add CHOWN --cap-add DAC_OVERRIDE --cap-add FOWNER --cap-add SETGID --cap-add SETUID \
+  --security-opt no-new-privileges:true \
+  -v /tmp/pgtest:/var/lib/postgresql \
+  -e POSTGRES_USER=test -e POSTGRES_PASSWORD=test \
+  proget.inc.elara.local/main/library/postgres:18.1
