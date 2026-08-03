@@ -1,4 +1,4 @@
-mkdir -p ~/captest
+chmod 777 ~/captest
 sudo docker run --rm --cap-drop ALL -v ~/captest:/out \
   proget.inc.elara.local/main/library/postgres:18.1 \
-  sh -c 'id -u; touch /out/x && echo WRITE-OK || echo WRITE-DENIED'
+  sh -c 'touch /out/x && echo WRITE-OK || echo WRITE-DENIED'
