@@ -1,2 +1,2 @@
-sed -i 's|<ФИД>|test-images|' \
+sed -i 's|your-feed|test-images|' \
   ~/elara_openide_backend/test_docker_config/post_commit/postgres_integration/docker-compose.yml
