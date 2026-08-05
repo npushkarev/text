@@ -1,7 +1,8 @@
-python3 -c "
-from xml.etree import ElementTree as ET; import glob
-ns={'t':'http://microsoft.com/schemas/VisualStudio/TeamTest/2010'}
-f=glob.glob('/home/user/elara_openide_backend/.tdc-out/reports/postgres_integration/tests/**/*.trx',recursive=True)[0]
-r=ET.parse(f).getroot()
-print(dict(r.find('.//t:Counters',ns).attrib))
-for u in r.findall('.//t:UnitTestResult',ns): print(' ', u.get('outcome'), u.get('testName'))"
+docker build -f tests/Elara.OpenIde.Backend.Infrastructure.IntegrationTests/postgres.Dockerfile \
+  -t proget.inc.elara.local/test-images/openide-all-tests:1.0.0 .
+
+cd ~/tdc-runner && git pull
+rm -rf ~/elara_openide_backend/test_docker_config
+cp -r profiles/elara_openide_backend/test_docker_config ~/elara_openide_backend/
+sed -i 's|your-feed|test-images|g' ~/elara_openide_backend/test_docker_config/post_commit/*/docker-compose.yml
+sudo ./smoke/run_as_ci.sh ~/elara_openide_backend
