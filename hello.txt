@@ -1,5 +1,1 @@
-sudo tee /etc/apt/apt.conf.d/01proxy >/dev/null <<'EOF'
-Acquire::http::Proxy "http://servers2:servers@172.17.0.153:8080";
-Acquire::https::Proxy "http://servers2:servers@172.17.0.153:8080";
-EOF
-sudo chmod 600 /etc/apt/apt.conf.d/01proxy
+s
