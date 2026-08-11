@@ -1,8 +1,5 @@
-docker build -f tests/Elara.OpenIde.Backend.Infrastructure.IntegrationTests/postgres.Dockerfile \
-  -t proget.inc.elara.local/test-images/openide-all-tests:1.0.0 .
-
-cd ~/tdc-runner && git pull
-rm -rf ~/elara_openide_backend/test_docker_config
-cp -r profiles/elara_openide_backend/test_docker_config ~/elara_openide_backend/
-sed -i 's|your-feed|test-images|g' ~/elara_openide_backend/test_docker_config/post_commit/*/docker-compose.yml
-sudo ./smoke/run_as_ci.sh ~/elara_openide_backend
+sudo tee /etc/apt/apt.conf.d/01proxy >/dev/null <<'EOF'
+Acquire::http::Proxy "http://servers2:servers@172.17.0.153:8080";
+Acquire::https::Proxy "http://servers2:servers@172.17.0.153:8080";
+EOF
+sudo chmod 600 /etc/apt/apt.conf.d/01proxy
