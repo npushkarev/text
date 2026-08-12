@@ -4,8 +4,5 @@
   $env:VSPHERE_USER = $cred.UserName
   $env:VSPHERE_PASSWORD = $cred.GetNetworkCredential().Password
 
-  .\scripts\scan-vsphere.ps1 `
-    -SourceVm "tst-win-10-12" `
-    -OutputDirectory "C:\Secure\vsphere-scan" `
-    -CaCert "C:\Secure\internal-ca.pem"
+  .\scripts\scan-vsphere.ps1 -SourceVm "tst-win-10-12" -OutputDirectory "C:\Secure\vsphere-scan" -CaCert "C:\Secure\internal-ca.pem"
 
