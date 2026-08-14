@@ -1,3 +1,6 @@
+python3 -m tdc migrate --repo ~/elara_openide_backend --dry-run   # посмотреть
+python3 -m tdc migrate --repo ~/elara_openide_backend             # записать
+
 x-tdc:
   os: linux
   arch: [x64, arm64]
