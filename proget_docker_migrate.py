@@ -590,6 +590,12 @@ class SizedStream:
         if chunk:
             self._hash.update(chunk)
             self._read += len(chunk)
+        elif self._read < self.len:
+            # Источник оборвал тело раньше времени. Молча дослать нечего: если просто
+            # вернуть b"", приёмник будет ждать обещанные Content-Length байты до таймаута.
+            raise TransportError(
+                f"источник оборвал передачу: получено {self._read} из {self.len} байт"
+            )
         return chunk
 
     def __iter__(self):
