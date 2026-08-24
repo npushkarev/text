@@ -1,3 +1,6 @@
+sed -i 's|^TESTS_IMAGE=.*|TESTS_IMAGE=proget.inc.elara.local/test-images/openide-postgres-integration-tests:1.0.0|' \
+  ~/elara_openide_backend/tests/Elara.OpenIde.Backend.Infrastructure.IntegrationTests/.env.default
+
 - таблица требований: каталог test_docker_config/post_commit/<имя набора>/, имя набора строчными, compose ровно docker-compose.yml (иначе набор не найден), второй compose рядом запрещён (compose.extra_file, docker подхватил бы его мимо проверок), значения ровно в .env.default;
 - разбор схемы «всё из TeamCity»: имя объявляется в params, TeamCity отдаёт TDC_PARAM_<ИМЯ>, сервис перечисляет переменную в environment:. Необъявленное имя не принимается, даже если оно есть в параметрах сборки. При такой схеме .env.default остаётся, но пустым.
 
