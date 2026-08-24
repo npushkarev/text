@@ -1,42 +1,192 @@
-sed -i 's|^TESTS_IMAGE=.*|TESTS_IMAGE=proget.inc.elara.local/test-images/openide-postgres-integration-tests:1.0.0|' \
-  ~/elara_openide_backend/tests/Elara.OpenIde.Backend.Infrastructure.IntegrationTests/.env.default
+# Миграция ProGet 2022.28 с Windows на ProGet Linux
 
-- таблица требований: каталог test_docker_config/post_commit/<имя набора>/, имя набора строчными, compose ровно docker-compose.yml (иначе набор не найден), второй compose рядом запрещён (compose.extra_file, docker подхватил бы его мимо проверок), значения ровно в .env.default;
-- разбор схемы «всё из TeamCity»: имя объявляется в params, TeamCity отдаёт TDC_PARAM_<ИМЯ>, сервис перечисляет переменную в environment:. Необъявленное имя не принимается, даже если оно есть в параметрах сборки. При такой схеме .env.default остаётся, но пустым.
+Да, миграция между разными операционными системами поддерживается: скрипты работают
+через HTTP API, а не копируют файлы ProGet напрямую.
 
+| Содержимое | Скрипт |
+|---|---|
+| Все обычные фиды | `proget_feed_delta_sync.py` |
+| Docker-фиды | `proget_docker_migrate.py` |
 
-python3 -m tdc migrate --repo ~/elara_openide_backend --dry-run   # посмотреть
-python3 -m tdc migrate --repo ~/elara_openide_backend             # записать
+Нужен только Python 3.8+. Внешних зависимостей нет, `pip install` не требуется.
+Оба скрипта можно безопасно запускать повторно: они догружают отсутствующее и ничего
+не удаляют по умолчанию.
 
-x-tdc:
-  os: linux
-  arch: [x64, arm64]
-  params:
-    STAND_IP: {default: 127.0.0.1}
-    LICENSE_HOST: {}                 # без default: прогон не стартует без значения
-  inputs:
-    - {artifact: "build/tests/**", dest: "bin/"}
-    - {source: "testdata/**", dest: "data/"}
-  outputs:
-    - {type: tests, format: junit, path: "results/*.xml"}
-  secrets:
-    db_password: {services: [postgres, tests]}
-  main_service: tests
-  timeout_minutes: 15
+## Подготовка
 
+1. На новом ProGet заранее создайте фиды с нужными именами и типами.
+   Скрипты переносят содержимое, но сами фиды не создают.
+2. Для обычных фидов новый ProGet должен быть версии 2023.0 или новее.
+3. Запускайте скрипт на любой машине, которая видит оба сервера.
+4. Подготовьте права:
+   - обычные фиды, старый сервер: **Native API Access** и **View/Download**;
+   - обычные фиды, новый сервер: **View/Download** и **Add/Repackage**;
+   - Docker: **View/Download** на старом и **Publish Packages** на новом.
 
-Про переменные окружения и IP стендов. Сделано. В test_cfg.xml объявляется <param name="STAND_IP" default="127.0.0.1"/>. Значение приходит снаружи: локально ключом --param STAND_IP=10.0.0.7, на сервере обычным параметром конфигурации TeamCity через env.TDC_PARAM_STAND_IP. Правка адреса не требует коммита. Имя, которого нет в файле, не принимается, поэтому опечатка в параметре не даст зелёный прогон против старого адреса.
+Задайте подключение один раз в текущем терминале:
 
-Про секреты из TeamCity. Пароль лежит скрытым параметром проекта. Первый шаг сборки раскладывает его файлом во временную папку, шаг с тестами монтирует её как /test/secrets только на чтение и только перечисленным сервисам, последний шаг стирает папку всегда, даже если сборка упала. В логи значение не попадает. Если позже перейдём на Vault, поменяется только первый шаг, конфигурация набора и тесты этого не заметят.
+```bash
+export PROGET_SRC_URL='https://old-proget.example'
+export PROGET_SRC_API_KEY='SOURCE_KEY'
+export PROGET_DST_URL='https://new-proget.example'
+export PROGET_DST_API_KEY='DESTINATION_KEY'
+```
 
-Про ограничения и права. Тесты идут на общем сервере сборки, поэтому по умолчанию у контейнеров сняты все права: контейнер с полным набором дотягивается до самого сервера и до чужих сборок. Нужные права возвращаются строкой в test_cfg.xml, список закрытый, восемь штук, выхода на хост в нём нет. Для postgres это пять прав и одна строка.
+## Обычные фиды
 
-Про python3 при ручном запуске. Не нужен. docker compose руками работает как работал. python3 нужен только пускалке: она проверяет файлы до старта, добавляет ограничения и монтирования, забирает отчёты и убирает контейнеры.
+`proget_feed_delta_sync.py` поддерживает NuGet, Chocolatey, PowerShell, npm,
+Universal, Romp, RubyGems, VSIX, Debian, PyPI, RPM, Helm, Conda, Maven, Bower,
+legacy Deployment и Asset Directory. Docker он автоматически пропускает.
 
-Про несколько наборов. Папка это не один тест, а один набор: одно окружение и один прогон. Тестов внутри сколько угодно, какие запускать решает фильтр. Вторая папка нужна, когда отличается окружение или когда прогоны надо видеть раздельно.
+Сначала проверьте один фид, например `Default`:
 
-Про покрытие. Согласен, для интеграционных тестов цифра малоосмысленная. Строка про покрытие в test_cfg.xml необязательная, уберите её, и раздела в отчёте не будет.
+```bash
+# Список пакетов на старом сервере
+python3 proget_feed_delta_sync.py --feed Default --list-only \
+  --report Default-inventory.json
 
-Про «фраза вводит в заблуждение». Поправил. Установка Docker, правка подсетей и задание окружения остаются, это настройка машины. В статье теперь таблица, что остаётся как было и что появляется.
+# План: показывает разницу, но ничего не загружает
+python3 proget_feed_delta_sync.py --feed Default --dry-run \
+  --report Default-plan.json
 
-Про test_cfg.xml. Да, речь про него, в тексте теперь имя файла названо явно.
+# Догрузка разницы
+python3 proget_feed_delta_sync.py --feed Default \
+  --state-file Default.state.jsonl --report Default-result.json
+
+# Строгая сверка после переноса
+python3 proget_feed_delta_sync.py --feed Default --compare --verify-existing \
+  --report Default-compare.json
+```
+
+Если имя нового фида отличается:
+
+```bash
+python3 proget_feed_delta_sync.py --feed Default=NuGet-Production --dry-run
+```
+
+### Все фиды
+
+В вашей конфигурации `debian` и `unstable` лучше переносить отдельно:
+
+```bash
+# Сначала план
+python3 proget_feed_delta_sync.py --all-feeds \
+  --exclude-feed debian --exclude-feed unstable \
+  --dry-run --report all-feeds-plan.json
+
+# Затем перенос
+python3 proget_feed_delta_sync.py --all-feeds \
+  --exclude-feed debian --exclude-feed unstable \
+  --state-file all-feeds.state.jsonl --report all-feeds-result.json
+```
+
+Docker-фид `main` будет пропущен. Пустые PyPI/RPM-фиды просто завершатся без
+загрузок.
+
+## Debian
+
+Для каждого Debian-фида нужно указать distribution. Найдите его в строке APT:
+
+```text
+deb https://old-proget/debian-feeds/debian stable main
+```
+
+Здесь `stable` — distribution, а `main` — component. Component, архитектуру,
+имя и версию пакета скрипт переносит автоматически.
+
+```bash
+# Проверка и перенос фида debian
+python3 proget_feed_delta_sync.py --feed debian \
+  --debian-distribution stable --dry-run --report debian-plan.json
+python3 proget_feed_delta_sync.py --feed debian \
+  --debian-distribution stable --state-file debian.state.jsonl \
+  --report debian-result.json
+
+# Проверка и перенос фида unstable
+python3 proget_feed_delta_sync.py --feed unstable \
+  --debian-distribution unstable --dry-run --report unstable-plan.json
+python3 proget_feed_delta_sync.py --feed unstable \
+  --debian-distribution unstable --state-file unstable.state.jsonl \
+  --report unstable-result.json
+```
+
+`stable` и `unstable` здесь являются примерами — сверьте реальные значения со
+строками APT. Один `--debian-distribution` применяется ко всем пакетам запуска,
+поэтому фиды с разными distributions запускаются отдельно. Если один старый фид
+использовался сразу с несколькими distributions, их нужно проверить отдельно:
+скрипт не может восстановить эту связь из старого API автоматически.
+
+## Cached-пакеты
+
+По умолчанию кеш connectors не переносится там, где старый API позволяет его
+отличить. Если кеш нужен, сначала проверьте его объём:
+
+```bash
+python3 proget_feed_delta_sync.py --feed External \
+  --include-cached --list-only --report External-with-cache.json
+```
+
+Затем добавьте `--include-cached` к команде переноса. Для PyPI, RPM и Helm эта
+опция при наличии connector может включить весь видимый внешний репозиторий.
+
+## Docker
+
+Docker-фид переносится через `proget_docker_migrate.py`.
+
+Перед запуском создайте Docker-фид `main` на новом сервере и временно отключите
+на нём:
+
+- **Container (Semantic) Versioning**;
+- **Block pushing external manifests**.
+
+Если на старом Docker-фиде есть connector, его также лучше временно отсоединить.
+
+```bash
+# План
+python3 proget_docker_migrate.py --src-feed main --dst-feed main \
+  --dry-run --report docker-plan.json
+
+# Перенос
+python3 proget_docker_migrate.py --src-feed main --dst-feed main --workers 2 \
+  --state-file docker.state.jsonl --report docker-result.json --log-file docker.log
+
+# Сверка digest после переноса
+python3 proget_docker_migrate.py --src-feed main --dst-feed main \
+  --compare --report docker-compare.json
+```
+
+ProGet 2022 мог сохранять `myapp` как `library/myapp`. Выберите поведение и
+сначала проверьте его через `--dry-run`:
+
+- `--library-prefix preserve` — оставить `library/` (по умолчанию);
+- `--library-prefix strip` — перенести как `myapp`;
+- `--library-prefix auto` — убрать префикс только у простых имён.
+
+## Важные ограничения
+
+- Не переносятся настройки фидов, permissions, connectors, retention rules,
+  счётчики скачиваний и исходные даты публикации.
+- `--state-file` позволяет продолжить прерванный перенос.
+- Для обычных фидов `--verify-existing` сверяет хеши уже существующих объектов;
+  Docker сверяется через `--compare` по digest.
+- При разных байтах скрипт по умолчанию сообщает конфликт и ничего не
+  перезаписывает. Перезапись требует `--on-conflict overwrite` и отдельного права.
+- Для Maven/Bower на новом фиде не должно быть connectors; ключу нужен
+  **Native API Access**.
+- Отдельные NuGet symbol packages `.snupkg` нужно проверить вручную.
+- Untagged Docker-образы не переносятся. Schema1-манифесты по умолчанию
+  пропускаются; `--allow-schema1` только пытается перенести их как есть.
+
+## Помощь и проверка
+
+```bash
+python3 proget_feed_delta_sync.py --help
+python3 proget_docker_migrate.py --help
+
+python3 tests/test_feed_delta_sync.py
+python3 tests/test_migrate.py
+```
+
+Коды завершения: `0` — успешно, `1` — есть ошибки или различия,
+`2` — запуск не состоялся. Для собственных сертификатов используйте
+`--src-ca` и `--dst-ca`; `--insecure` отключает проверку TLS.
