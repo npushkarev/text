@@ -32,3 +32,5 @@ TESTS_IMAGE=proget.inc.elara.local/test-images/openide-integration-tests:1.0.0
 
   sudo docker push \
     proget.inc.elara.local/main/openide-postgres-integration-tests:1.0.0
+
+TESTS_IMAGE=proget.inc.elara.local/main/openide-postgres-integration-tests:1.0.0
