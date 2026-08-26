@@ -34,3 +34,5 @@ TESTS_IMAGE=proget.inc.elara.local/test-images/openide-integration-tests:1.0.0
     proget.inc.elara.local/main/openide-postgres-integration-tests:1.0.0
 
 TESTS_IMAGE=proget.inc.elara.local/main/openide-postgres-integration-tests:1.0.0
+
+env.TDC_OUT = %teamcity.build.checkoutDir%/.tdc-out
