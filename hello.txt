@@ -3,4 +3,4 @@
 "%teamcity.build.checkoutDir%/%projectName%/ci/run_tests.sh"
 
 
-%teamcity.build.checkoutDir%/%projectName%
+%teamcity.build.checkoutDir%/%projectName%/profiles/elara_openide_backend
