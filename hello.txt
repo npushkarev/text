@@ -3,4 +3,10 @@
 "%teamcity.build.checkoutDir%/%projectName%/ci/run_tests.sh"
 
 
-%teamcity.build.checkoutDir%/%projectName%/profiles/elara_openide_backend
+sed -i 's|proget.inc.elara.local/your-feed/|proget.inc.elara.local/main/|' \
+    profiles/elara_openide_backend/tests/.env.default \
+    profiles/elara_openide_backend/tests/Elara.OpenIde.Backend.Infrastructure.IntegrationTests/.env.default
+
+  git add profiles/elara_openide_backend/tests
+  git commit -m "configure ProGet feed for OpenIDE tests"
+  git push origin develop
