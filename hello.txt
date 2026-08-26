@@ -12,3 +12,13 @@ sed -i 's|proget.inc.elara.local/your-feed/|proget.inc.elara.local/main/|' \
   git push origin develop
 
 TESTS_IMAGE=proget.inc.elara.local/test-images/openide-integration-tests:1.0.0
+TESTS_IMAGE=proget.inc.elara.local/test-images/openide-integration-tests:1.0.0
+
+ sudo docker image inspect 2d46e2063aa8 \
+    --format 'Created={{.Created}} RepoDigests={{json .RepoDigests}} Labels={{json .Config.Labels}}'
+
+  sudo docker history --no-trunc 2d46e2063aa8
+
+  Также найдите команду сборки в истории shell:
+
+  history | grep -E 'docker (build|load|tag).*openide'
