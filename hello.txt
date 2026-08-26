@@ -22,3 +22,13 @@ TESTS_IMAGE=proget.inc.elara.local/test-images/openide-integration-tests:1.0.0
   Также найдите команду сборки в истории shell:
 
   history | grep -E 'docker (build|load|tag).*openide'
+
+
+ sudo docker tag \
+    2d46e2063aa8 \
+    proget.inc.elara.local/main/openide-postgres-integration-tests:1.0.0
+
+  Отправьте образ:
+
+  sudo docker push \
+    proget.inc.elara.local/main/openide-postgres-integration-tests:1.0.0
