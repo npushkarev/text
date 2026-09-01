@@ -1,123 +1,237 @@
-#!/bin/bash
-     set -e
-"%teamcity.build.checkoutDir%/%projectName%/ci/run_tests.sh"
+(async () => {
+    const API = "/app/rest/2018.1";
+    const sourcePath = ["SURA2", "COMPONENTS", "CMAKE", "EL_CONF"];
 
+    const repos = [
+      "as_system_data",
+      "el_conf_chart_data_manager",
+      "el_conf_config_builder",
+      "el_conf_device_config_manager",
+      "el_conf_core_sdk",
+      "el_conf_gui_sdk",
+      "el_conf_themes",
+      "el_conf_utils",
+      "el_conf_elecont_protocol_client",
+      "el_conf_plugin_sdk",
+      "el_conf_sura_connector_client",
+      "el_conf_chart_ui_plugin",
+      "as_app"
+    ];
 
-sed -i 's|proget.inc.elara.local/your-feed/|proget.inc.elara.local/main/|' \
-    profiles/elara_openide_backend/tests/.env.default \
-    profiles/elara_openide_backend/tests/Elara.OpenIde.Backend.Infrastructure.IntegrationTests/.env.default
+    const xmlEscape = value => String(value).replace(
+      /[&<>"']/g,
+      ch => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&apos;"
+      })[ch]
+    );
 
-  git add profiles/elara_openide_backend/tests
-  git commit -m "configure ProGet feed for OpenIDE tests"
-  git push origin develop
+    async function request(
+      method,
+      path,
+      body = null,
+      contentType = null,
+      accept = "application/json"
+    ) {
+      const headers = { Accept: accept };
+      if (contentType) headers["Content-Type"] = contentType;
 
-TESTS_IMAGE=proget.inc.elara.local/test-images/openide-integration-tests:1.0.0
-TESTS_IMAGE=proget.inc.elara.local/test-images/openide-integration-tests:1.0.0
+      const response = await fetch(API + path, {
+        method,
+        headers,
+        body,
+        credentials: "same-origin"
+      });
 
- sudo docker image inspect 2d46e2063aa8 \
-    --format 'Created={{.Created}} RepoDigests={{json .RepoDigests}} Labels={{json .Config.Labels}}'
+      const text = await response.text();
 
-  sudo docker history --no-trunc 2d46e2063aa8
+      if (!response.ok) {
+        throw new Error(
+          `${method} ${path}: HTTP ${response.status}\n${text}`
+        );
+      }
 
-  Также найдите команду сборки в истории shell:
-
-  history | grep -E 'docker (build|load|tag).*openide'
-
-
- sudo docker tag \
-    2d46e2063aa8 \
-    proget.inc.elara.local/main/openide-postgres-integration-tests:1.0.0
-
-  Отправьте образ:
-
-  sudo docker push \
-    proget.inc.elara.local/main/openide-postgres-integration-tests:1.0.0
-
-TESTS_IMAGE=proget.inc.elara.local/main/openide-postgres-integration-tests:1.0.0
-
-env.TDC_OUT = %teamcity.build.checkoutDir%/.tdc-out
-
-
-server {
-    listen 80;
-    listen [::]:80;
-    server_name proget.inc.elara.local;
-
-    location /nuget/ {
-        proxy_pass http://127.0.0.1:8624;
-        proxy_set_header Host              $host;
-        proxy_set_header X-Real-IP         $remote_addr;
-        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto http;
-        proxy_read_timeout 1800;
-        proxy_send_timeout 1800;
-        proxy_request_buffering off;
-        client_max_body_size 0;
+      return text;
     }
 
-    location / {
-        return 301 https://$host$request_uri;
+    async function getJson(path) {
+      return JSON.parse(await request("GET", path));
     }
-}
 
-server {
-    listen 80;
-    listen [::]:80;
-    server_name proget.inc.elara.local;
-    return 301 https://$host$request_uri;
-}
+    const query = new URLSearchParams({
+      locator: "count:10000",
+      fields: "project(id,name,parentProjectId,description)"
+    });
 
+    const allProjects =
+      (await getJson("/projects?" + query)).project || [];
 
-git clone https://github.com/PrismML-Eng/llama.cpp
+    const byId = new Map(allProjects.map(project => [project.id, project]));
 
+    function fullPath(project) {
+      const result = [];
+      const visited = new Set();
 
+      while (project && project.id !== "_Root") {
+        if (visited.has(project.id)) {
+          throw new Error(`Цикл в дереве проектов: ${project.id}`);
+        }
 
+        visited.add(project.id);
+        result.unshift(project.name);
+        project = byId.get(project.parentProjectId);
+      }
 
-# Краткая спецификация GPU-сервера
+      return result;
+    }
 
-**Назначение:** локальный запуск DeepSeek V4-Flash, LLM и AI-агентов.
+    const wanted = sourcePath.join("/").toLowerCase();
 
-## Аппаратная конфигурация
+    const matches = allProjects.filter(project =>
+      fullPath(project).join("/").toLowerCase() === wanted
+    );
 
-- Сервер: ASUS ESC4000A-E12, 2U.
-- GPU: 4 × NVIDIA RTX PRO 5000 Blackwell по 72 ГБ.
-- Совокупная видеопамять: не менее 288 ГБ.
-- CPU: AMD EPYC 9374F, 32 ядра / 64 потока.
-- ОЗУ: 128 ГБ DDR5 ECC REG 4800 МГц.
-- SSD: Intel D5-P5530 960 ГБ U.2.
-- Блоки питания: 2 × 2600 Вт, резервируемые.
-- Управление: BMC/IPMI с удалённой консолью и мониторингом датчиков.
+    if (matches.length !== 1) {
+      throw new Error(
+        `Проект ${sourcePath.join(" / ")} найден ${matches.length} раз`
+      );
+    }
 
-## Инфраструктура
+    const source = matches[0];
+    const parentId = source.parentProjectId;
 
-- Стойка 19", свободное место 2U.
-- ИБП, заземление и кондиционирование.
-- Отдельный административный доступ к BMC.
-- API доступен только из разрешённых внутренних сетей.
+    const children = allProjects.filter(
+      project => project.parentProjectId === parentId
+    );
 
-## Программная часть
+    const childrenByName = new Map(
+      children.map(project => [project.name.toLowerCase(), project])
+    );
 
-- Ubuntu Server LTS.
-- NVIDIA Driver, CUDA, NVIDIA Container Toolkit.
-- Docker/Podman для inference-сервиса.
-- OpenAI-совместимый API, streaming, health-check.
-- Лимиты запросов, тайм-ауты и API-ключи.
+    const childrenById = new Map(
+      children.map(project => [project.id, project])
+    );
 
-## Безопасность и мониторинг
+    function idPart(name) {
+      return name
+        .split(/[^A-Za-z0-9]+/)
+        .filter(Boolean)
+        .map(word => word[0].toUpperCase() + word.slice(1))
+        .join("");
+    }
 
-- Раздельные права администратора ОС, администратора ИИ и пользователя.
-- BMC не публиковать в Интернет.
-- Использовать TLS, ротацию ключей и минимальные привилегии.
-- Контролировать GPU, VRAM, температуры, питание, CPU, ОЗУ, SSD, API и latency.
-- Настроить уведомления об отказах, перегреве и заполнении диска.
+    const plan = repos.map(repo => {
+      const id = `${parentId}_${idPart(repo)}`;
+      const sameName = childrenByName.get(repo.toLowerCase());
+      const sameId = childrenById.get(id);
 
-## Приёмка
+      let state = "CREATE";
 
-- ОС видит все 4 GPU и не менее 288 ГБ видеопамяти.
-- Стресс-тест GPU — не менее 30 минут без ошибок.
-- Целевая модель отвечает через API.
-- Проверяются TLS, аутентификация и лимиты запросов.
-- Сервис восстанавливается после перезагрузки.
-- Передаются конфигурация, инструкции и результаты тестов.
+      if (
+        (sameName && sameName.id !== id) ||
+        (sameId && sameId.name.toLowerCase() !== repo.toLowerCase())
+      ) {
+        state = "CONFLICT";
+      } else if (sameName || sameId) {
+        state = "EXISTS";
+      }
 
-**Цены в спецификации не указываются.**
+      return { repo, id, state };
+    });
+
+    console.table(plan);
+
+    if (plan.some(item => item.state === "CONFLICT")) {
+      throw new Error("Есть CONFLICT. Ничего не создано.");
+    }
+
+    const createCount = plan.filter(
+      item => item.state === "CREATE"
+    ).length;
+
+    if (!window.confirm(
+      `Создать ${createCount} проектов и настроить все 13?\n\n` +
+      "Источник: SURA2 / COMPONENTS / CMAKE / EL_CONF"
+    )) {
+      console.log("Отменено. TeamCity не изменён.");
+      return;
+    }
+
+    async function setParameters(projectId, repo) {
+      const locator = encodeURIComponent(`id:${projectId}`);
+      const parameterQuery = new URLSearchParams({
+        fields: "property(name)"
+      });
+
+      const parameters = await getJson(
+        `/projects/${locator}/parameters?${parameterQuery}`
+      );
+
+      const existing = new Set(
+        (parameters.property || []).map(item => item.name)
+      );
+
+      const desired = {
+        repoProject: "su2",
+        repoName: repo,
+        projectName: repo,
+        "iac.managedBy": "su2-repos-setup/teamcity-f12"
+      };
+
+      for (const [name, value] of Object.entries(desired)) {
+        if (existing.has(name)) {
+          await request(
+            "PUT",
+            `/projects/${locator}/parameters/${encodeURIComponent(name)}`,
+            value,
+            "text/plain; charset=utf-8",
+            "text/plain"
+          );
+        } else {
+          const property =
+            `<?xml version="1.0" encoding="UTF-8"?>` +
+            `<property name="${xmlEscape(name)}" ` +
+            `value="${xmlEscape(value)}"/>`;
+
+          await request(
+            "POST",
+            `/projects/${locator}/parameters`,
+            property,
+            "application/xml"
+          );
+        }
+      }
+    }
+
+    for (const item of plan) {
+      if (item.state === "CREATE") {
+        console.log(`Создаю ${item.repo}...`);
+
+        const payload =
+          `<?xml version="1.0" encoding="UTF-8"?>` +
+          `<newProjectDescription ` +
+          `copyAllAssociatedSettings="true" ` +
+          `id="${xmlEscape(item.id)}" ` +
+          `name="${xmlEscape(item.repo)}" ` +
+          `description="Managed by su2-repos-setup/teamcity-f12">` +
+          `<sourceProject locator="id:${xmlEscape(source.id)}"/>` +
+          `<parentProject locator="id:${xmlEscape(parentId)}"/>` +
+          `</newProjectDescription>`;
+
+        await request(
+          "POST",
+          "/projects",
+          payload,
+          "application/xml"
+        );
+      }
+
+      await setParameters(item.id, item.repo);
+      console.log(`OK: ${item.repo}`);
+    }
+
+    console.log("ГОТОВО: настроены все 13 проектов.");
+  })().catch(error => console.error("ОШИБКА:", error));
