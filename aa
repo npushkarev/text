@@ -1,0 +1,103 @@
+(async () => {
+    const API = "/app/rest/2018.1";
+    const repos = [
+      "as_system_data",
+      "el_conf_chart_data_manager",
+      "el_conf_config_builder",
+      "el_conf_device_config_manager",
+      "el_conf_core_sdk",
+      "el_conf_gui_sdk",
+      "el_conf_themes",
+      "el_conf_utils",
+      "el_conf_elecont_protocol_client",
+      "el_conf_plugin_sdk",
+      "el_conf_sura_connector_client",
+      "el_conf_chart_ui_plugin",
+      "as_app"
+    ];
+
+    const query = new URLSearchParams({
+      locator: "count:10000",
+      fields: "project(id,name,parentProjectId)"
+    });
+
+    const response = await fetch(`${API}/projects?${query}`, {
+      credentials: "same-origin",
+      headers: { Accept: "application/json" }
+    });
+
+    if (!response.ok) {
+      throw new Error(`GET projects: HTTP ${response.status}`);
+    }
+
+    const projects = (await response.json()).project || [];
+    const byId = new Map(projects.map(p => [p.id, p]));
+
+    function fullPath(project) {
+      const result = [];
+
+      while (project && project.id !== "_Root") {
+        result.unshift(project.name);
+        project = byId.get(project.parentProjectId);
+      }
+
+      return result.join("/").toUpperCase();
+    }
+
+    const source = projects.find(
+      p => fullPath(p) === "SURA2/COMPONENTS/CMAKE/EL_CONF"
+    );
+
+    if (!source) {
+      throw new Error("Не найден SURA2 / COMPONENTS / CMAKE / EL_CONF");
+    }
+
+    const targets = repos.map(repo => {
+      const project = projects.find(
+        p =>
+          p.parentProjectId === source.parentProjectId &&
+          p.name.toLowerCase() === repo
+      );
+
+      if (!project) {
+        throw new Error(`Не найден проект ${repo}`);
+      }
+
+      return {
+        id: project.id,
+        before: project.name,
+        after: repo.toUpperCase()
+      };
+    });
+
+    console.table(targets);
+
+    if (!window.confirm("Переименовать эти 13 проектов в верхний регистр?")) {
+      console.log("Отменено. Ничего не изменено.");
+      return;
+    }
+
+    for (const target of targets) {
+      const locator = encodeURIComponent(`id:${target.id}`);
+
+      const result = await fetch(`${API}/projects/${locator}/name`, {
+        method: "PUT",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          Accept: "text/plain"
+        },
+        body: target.after
+      });
+
+      if (!result.ok) {
+        throw new Error(
+          `${target.before}: HTTP ${result.status} ${await result.text()}`
+        );
+      }
+
+      console.log(`OK: ${target.before} -> ${target.after}`);
+    }
+
+    console.log("ГОТОВО: переименованы все 13 проектов.");
+  })().catch(error => console.error("ОШИБКА:", error));
