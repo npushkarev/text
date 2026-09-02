@@ -1,15 +1,183 @@
- $work = Join-Path $env:TEMP ("qt_rest_api-" + [guid]::NewGuid())
+(async () => {
+    const API = "/app/rest/2018.1";
+    const SOURCE_PATH = ["SURA2", "COMPONENTS", "CMAKE", "EL_CONF"];
+    const TARGET_NAME = "QT_REST_API";
 
-  New-Item -ItemType Directory -Path $work | Out-Null
-  Push-Location $work
+    const PARAMETERS = {
+      repoProject: "su2",
+      repoName: "qt_rest_api",
+      projectName: "qt_rest_api"
+    };
 
-  git init
-  git symbolic-ref HEAD refs/heads/develop
-  git -c user.name="SU2 initializer" `
-      -c user.email="su2@elara.local" `
-      commit --allow-empty -m "Initial commit"
+    let csrfToken = "";
 
-  git remote add origin "http://bitbucket.inc.elara.local/scm/su2/qt_rest_api.git"
-  git push origin HEAD:refs/heads/develop HEAD:refs/heads/master
+    try {
+      const csrfResponse = await fetch(
+        "/authenticationTest.html?csrf",
+        { credentials: "same-origin" }
+      );
 
-  Pop-Location
+      if (csrfResponse.ok) {
+        csrfToken = (await csrfResponse.text()).trim();
+      }
+    } catch (_) {}
+
+    async function request(path, options = {}) {
+      const method = options.method || "GET";
+      const headers = {
+        Accept: "application/json",
+        ...(options.headers || {})
+      };
+
+      if (csrfToken && method !== "GET" && method !== "HEAD") {
+        headers["X-TC-CSRF-Token"] = csrfToken;
+      }
+
+      const response = await fetch(API + path, {
+        method,
+        headers,
+        body: options.body,
+        credentials: "same-origin"
+      });
+
+      const text = await response.text();
+
+      if (!response.ok) {
+        throw new Error(
+          `${method} ${path}\nHTTP ${response.status}\n${text}`
+        );
+      }
+
+      return text;
+    }
+
+    const query = new URLSearchParams({
+      locator: "count:10000",
+      fields: "project(id,name,parentProjectId)"
+    });
+
+    const response = JSON.parse(
+      await request(`/projects?${query.toString()}`)
+    );
+
+    const projects = response.project || [];
+    const projectsById = new Map(
+      projects.map(project => [project.id, project])
+    );
+
+    function projectPath(project) {
+      const result = [];
+      const visited = new Set();
+      let current = project;
+
+      while (current && !visited.has(current.id)) {
+        visited.add(current.id);
+        result.unshift(current.name);
+        current = projectsById.get(current.parentProjectId);
+      }
+
+      return result;
+    }
+
+    function normalize(value) {
+      return String(value || "")
+        .toUpperCase()
+        .replace(/[^A-Z0-9А-ЯЁ]+/g, "");
+    }
+
+    const expectedPath = SOURCE_PATH.map(normalize).join("/");
+
+    const sourceProjects = projects.filter(project => {
+      const path = projectPath(project)
+        .slice(-SOURCE_PATH.length)
+        .map(normalize)
+        .join("/");
+
+      return path === expectedPath;
+    });
+
+    if (sourceProjects.length !== 1) {
+      throw new Error(
+        `Не найден единственный проект ${SOURCE_PATH.join(" / ")}. ` +
+        `Найдено: ${sourceProjects.length}`
+      );
+    }
+
+    const source = sourceProjects[0];
+    const parentId = source.parentProjectId;
+
+    let target = projects.find(project =>
+      project.parentProjectId === parentId &&
+      normalize(project.name) === normalize(TARGET_NAME)
+    );
+
+    let targetId;
+
+    if (!target) {
+      targetId = `${parentId}_QtRestApi`
+        .replace(/[^A-Za-z0-9_]/g, "_");
+
+      const payload = {
+        id: targetId,
+        name: TARGET_NAME,
+        copyAllAssociatedSettings: true,
+        sourceProject: {
+          locator: `id:${source.id}`
+        },
+        parentProject: {
+          locator: `id:${parentId}`
+        }
+      };
+
+      const created = JSON.parse(
+        await request("/projects", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        })
+      );
+
+      targetId = created.id || targetId;
+      console.log(`Проект ${TARGET_NAME} создан из EL_CONF`);
+    } else {
+      targetId = target.id;
+      console.log(`Проект ${TARGET_NAME} уже существует`);
+
+      if (target.name !== TARGET_NAME) {
+        await request(
+          `/projects/${encodeURIComponent(`id:${targetId}`)}/name`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "text/plain"
+            },
+            body: TARGET_NAME
+          }
+        );
+      }
+    }
+
+    const targetLocator = encodeURIComponent(`id:${targetId}`);
+
+    for (const [name, value] of Object.entries(PARAMETERS)) {
+      await request(
+        `/projects/${targetLocator}/parameters/${encodeURIComponent(name)}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "text/plain"
+          },
+          body: value
+        }
+      );
+
+      console.log(`${name}=${value}`);
+    }
+
+    console.log(
+      `ГОТОВО: ${location.origin}/project.html?projectId=${encodeURIComponent(targetId)}`
+    );
+  })().catch(error => console.error("ОШИБКА:", error));
+
