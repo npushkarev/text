@@ -1,4 +1,5 @@
 (async () => {
+    const project = "SU2";
     const repos = [
       "as_system_data",
       "el_conf_chart_data_manager",
@@ -15,45 +16,126 @@
       "as_app"
     ];
 
-    for (const repo of repos) {
-      const list = await fetch(
-        `/rest/api/1.0/projects/SU2/repos/${repo}/branches?filterText=master&limit=100`,
-        { credentials: "same-origin" }
-      );
+    async function api(url, options = {}) {
+      const response = await fetch(url, {
+        credentials: "same-origin",
+        ...options,
+        headers: {
+          Accept: "application/json",
+          "X-Atlassian-Token": "no-check",
+          ...(options.body ? { "Content-Type": "application/json" } : {}),
+          ...(options.headers || {})
+        }
+      });
 
-      if (!list.ok) {
-        console.error("CHECK ERROR", repo, list.status);
-        continue;
+      const text = await response.text();
+      let data = text;
+
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch (ignored) {}
+
+      if (!response.ok) {
+        throw new Error(
+          `${options.method || "GET"} ${url}: HTTP ${response.status}: ${text}`
+        );
       }
 
-      const branches = await list.json();
+      return data;
+    }
+
+    if (!confirm("Создать master во всех 13 репозиториях?")) {
+      return;
+    }
+
+    for (const repo of repos) {
+      const repoBase =
+        `/rest/api/1.0/projects/${project}/repos/${repo}`;
+
+      const branches = await api(
+        `${repoBase}/branches?filterText=master&limit=100`
+      );
 
       if (branches.values.some(b => b.id === "refs/heads/master")) {
         console.log("ALREADY EXISTS", repo);
         continue;
       }
 
-      const response = await fetch(
-        `/rest/branch-utils/1.0/projects/SU2/repos/${repo}/branches`,
-        {
-          method: "POST",
-          credentials: "same-origin",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Atlassian-Token": "no-check"
-          },
-          body: JSON.stringify({
-            name: "master",
-            startPoint: "refs/heads/develop"
-          })
-        }
+      const hooks = await api(
+        `${repoBase}/settings/hooks?type=PRE_RECEIVE&limit=100`
       );
 
-      console.log(
-        response.ok ? "CREATED" : "ERROR",
-        repo,
-        response.status,
-        await response.text()
-      );
+      const controlFreakHooks = hooks.values.filter(hook => {
+        const details = hook.details || {};
+        const description = [
+          details.key,
+          details.name,
+          details.description
+        ].join(" ").toLowerCase();
+
+        return hook.enabled && (
+          description.includes("control freak") ||
+          description.includes("control-freak") ||
+          description.includes("controlfreak")
+        );
+      });
+
+      if (controlFreakHooks.length !== 1) {
+        throw new Error(
+          `${repo}: найдено активных Control Freak hooks: ` +
+          controlFreakHooks.length
+        );
+      }
+
+      const hook = controlFreakHooks[0];
+      const hookKey = encodeURIComponent(hook.details.key);
+      const hookBase = `${repoBase}/settings/hooks/${hookKey}`;
+      const originalScope = hook.scope && hook.scope.type;
+      let originalSettings = null;
+      let disabled = false;
+
+      if (originalScope === "REPOSITORY") {
+        originalSettings = await api(`${hookBase}/settings`);
+      }
+
+      try {
+        await api(`${hookBase}/enabled`, { method: "DELETE" });
+        disabled = true;
+        console.log("HOOK DISABLED", repo);
+
+        await api(
+          `/rest/branch-utils/1.0/projects/${project}/repos/${repo}/branches`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              name: "master",
+              startPoint: "refs/heads/develop"
+            })
+          }
+        );
+
+        console.log("MASTER CREATED", repo);
+      } finally {
+        if (disabled) {
+          try {
+            if (originalScope === "REPOSITORY") {
+              await api(`${hookBase}/enabled`, {
+                method: "PUT",
+                body: JSON.stringify(originalSettings)
+              });
+            } else {
+              await api(hookBase, { method: "DELETE" });
+            }
+
+            console.log("HOOK RESTORED", repo);
+          } catch (error) {
+            console.error("CRITICAL: HOOK NOT RESTORED", repo, error);
+            alert(`Не удалось восстановить Control Freak для ${repo}`);
+            throw error;
+          }
+        }
+      }
     }
+
+    console.log("FINISHED: master создан во всех репозиториях");
   })();
