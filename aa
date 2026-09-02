@@ -32,3 +32,4 @@ var H={};H["Content-Type"]="application/json"
 
   R.forEach(function(r){fetch(U+r+"/branches",{method:"POST",headers:H,body:B}).then(function(x){console.log(r,x.status)})})
 
+  fetch(U+"as_app/branches",{method:"POST",headers:H,body:B}).then(function(x){return x.text()}).then(console.log)
