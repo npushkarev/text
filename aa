@@ -1,35 +1,41 @@
- Первая:
+(async () => {
+    const project = "SU2";
+    const repo = "qt_rest_api";
+    const url = `/rest/api/1.0/projects/${project}/repos`;
 
-  var R = [
-  "as_system_data",
-  "el_conf_chart_data_manager",
-  "el_conf_config_builder",
-  "el_conf_device_config_manager",
-  "el_conf_core_sdk",
-  "el_conf_gui_sdk",
-  "el_conf_themes",
-  "el_conf_utils",
-  "el_conf_elecont_protocol_client",
-  "el_conf_plugin_sdk",
-  "el_conf_sura_connector_client",
-  "el_conf_chart_ui_plugin",
-  "as_app"
-  ]
+    const existing = await fetch(`${url}/${repo}`, {
+      credentials: "same-origin"
+    });
 
-  Вторая:
+    if (existing.ok) {
+      console.log(`Репозиторий ${project}/${repo} уже существует`);
+      return;
+    }
 
-  var U="/rest/branch-utils/1.0/projects/SU2/repos/",B='{"name":"master","startPoint":"refs/heads/develop"}'
+    if (existing.status !== 404) {
+      throw new Error(`${existing.status}: ${await existing.text()}`);
+    }
 
-  Третья:
+    const response = await fetch(url, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "X-Atlassian-Token": "no-check"
+      },
+      body: JSON.stringify({
+        name: repo,
+        scmId: "git",
+        forkable: true
+      })
+    });
 
-  R.forEach(function(r){fetch(U+r+"/branches",{method:"POST",headers:{"Content-Type":"application/
-  json"},body:B}).then(function(x){console.log(r,x.status)})})
+    const body = await response.text();
 
+    if (!response.ok) {
+      throw new Error(`${response.status}: ${body}`);
+    }
 
-var H={};H["Content-Type"]="application/json"
-
-  Затем:
-
-  R.forEach(function(r){fetch(U+r+"/branches",{method:"POST",headers:H,body:B}).then(function(x){console.log(r,x.status)})})
-
-  fetch(U+"as_app/branches",{method:"POST",headers:H,body:B}).then(function(x){return x.text()}).then(console.log)
+    console.log(`Создан ${project}/${repo}`, response.status);
+  })();
