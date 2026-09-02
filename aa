@@ -1,5 +1,4 @@
-(async () => {
-    const project = "SU2";
+ (async () => {
     const repos = [
       "as_system_data",
       "el_conf_chart_data_manager",
@@ -16,66 +15,61 @@
       "as_app"
     ];
 
-    async function api(url, options = {}) {
-      const response = await fetch(url, {
-        credentials: "same-origin",
-        ...options,
-        headers: {
-          Accept: "application/json",
-          "X-Atlassian-Token": "no-check",
-          ...(options.body ? { "Content-Type": "application/json" } : {}),
-          ...(options.headers || {})
-        }
-      });
-
-      const text = await response.text();
-      let data = text;
-
-      try {
-        data = text ? JSON.parse(text) : null;
-      } catch (ignored) {}
-
-      if (!response.ok) {
-        throw new Error(
-          `${options.method || "GET"} ${url}: HTTP ${response.status}: ${text}`
-        );
-      }
-
-      return data;
-    }
-
-    if (!confirm("Создать master во всех 13 репозиториях?")) {
-      return;
-    }
+    let created = 0;
+    let existed = 0;
+    let failed = 0;
 
     for (const repo of repos) {
-      const repoBase =
-        `/rest/api/1.0/projects/${project}/repos/${repo}`;
-
-      const branches = await api(
-        `${repoBase}/branches?filterText=master&limit=100`
+      const check = await fetch(
+        `/rest/api/1.0/projects/SU2/repos/${repo}/branches?filterText=master&limit=100`,
+        { credentials: "same-origin" }
       );
 
-      if (branches.values.some(b => b.id === "refs/heads/master")) {
-        console.log("ALREADY EXISTS", repo);
+      if (!check.ok) {
+        console.error("CHECK ERROR", repo, check.status);
+        failed++;
         continue;
       }
 
-      const hooks = await api(
-        `${repoBase}/settings/hooks?type=PRE_RECEIVE&limit=100`
+      const branches = await check.json();
+
+      if (branches.values.some(b => b.id === "refs/heads/master")) {
+        console.log("ALREADY EXISTS", repo);
+        existed++;
+        continue;
+      }
+
+      const response = await fetch(
+        `/rest/branch-utils/1.0/projects/SU2/repos/${repo}/branches`,
+        {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Atlassian-Token": "no-check"
+          },
+          body: JSON.stringify({
+            name: "master",
+            startPoint: "refs/heads/develop"
+          })
+        }
       );
 
-      const controlFreakHooks = hooks.values.filter(hook => {
-        const details = hook.details || {};
-        const description = [
-          details.key,
-          details.name,
-          details.description
-        ].join(" ").toLowerCase();
+      const responseText = await response.text();
 
-        return hook.enabled && (
-          description.includes("control freak") ||
-          description.includes("control-freak") ||
+      if (response.ok) {
+        console.log("MASTER CREATED", repo);
+        created++;
+      } else {
+        console.error("CREATE ERROR", repo, response.status, responseText);
+        failed++;
+      }
+    }
+
+    console.log(
+      `FINISHED: created=${created}, existed=${existed}, failed=${failed}`
+    );
+  })();          description.includes("control-freak") ||
           description.includes("controlfreak")
         );
       });
