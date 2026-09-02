@@ -1,5 +1,4 @@
 (async () => {
-    const API = "/app/rest/2018.1";
     const repos = [
       "as_system_data",
       "el_conf_chart_data_manager",
@@ -16,88 +15,45 @@
       "as_app"
     ];
 
-    const query = new URLSearchParams({
-      locator: "count:10000",
-      fields: "project(id,name,parentProjectId)"
-    });
-
-    const response = await fetch(`${API}/projects?${query}`, {
-      credentials: "same-origin",
-      headers: { Accept: "application/json" }
-    });
-
-    if (!response.ok) {
-      throw new Error(`GET projects: HTTP ${response.status}`);
-    }
-
-    const projects = (await response.json()).project || [];
-    const byId = new Map(projects.map(p => [p.id, p]));
-
-    function fullPath(project) {
-      const result = [];
-
-      while (project && project.id !== "_Root") {
-        result.unshift(project.name);
-        project = byId.get(project.parentProjectId);
-      }
-
-      return result.join("/").toUpperCase();
-    }
-
-    const source = projects.find(
-      p => fullPath(p) === "SURA2/COMPONENTS/CMAKE/EL_CONF"
-    );
-
-    if (!source) {
-      throw new Error("Не найден SURA2 / COMPONENTS / CMAKE / EL_CONF");
-    }
-
-    const targets = repos.map(repo => {
-      const project = projects.find(
-        p =>
-          p.parentProjectId === source.parentProjectId &&
-          p.name.toLowerCase() === repo
+    for (const repo of repos) {
+      const list = await fetch(
+        `/rest/api/1.0/projects/SU2/repos/${repo}/branches?filterText=master&limit=100`,
+        { credentials: "same-origin" }
       );
 
-      if (!project) {
-        throw new Error(`Не найден проект ${repo}`);
+      if (!list.ok) {
+        console.error("CHECK ERROR", repo, list.status);
+        continue;
       }
 
-      return {
-        id: project.id,
-        before: project.name,
-        after: repo.toUpperCase()
-      };
-    });
+      const branches = await list.json();
 
-    console.table(targets);
-
-    if (!window.confirm("Переименовать эти 13 проектов в верхний регистр?")) {
-      console.log("Отменено. Ничего не изменено.");
-      return;
-    }
-
-    for (const target of targets) {
-      const locator = encodeURIComponent(`id:${target.id}`);
-
-      const result = await fetch(`${API}/projects/${locator}/name`, {
-        method: "PUT",
-        credentials: "same-origin",
-        headers: {
-          "Content-Type": "text/plain; charset=utf-8",
-          Accept: "text/plain"
-        },
-        body: target.after
-      });
-
-      if (!result.ok) {
-        throw new Error(
-          `${target.before}: HTTP ${result.status} ${await result.text()}`
-        );
+      if (branches.values.some(b => b.id === "refs/heads/master")) {
+        console.log("ALREADY EXISTS", repo);
+        continue;
       }
 
-      console.log(`OK: ${target.before} -> ${target.after}`);
-    }
+      const response = await fetch(
+        `/rest/branch-utils/1.0/projects/SU2/repos/${repo}/branches`,
+        {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Atlassian-Token": "no-check"
+          },
+          body: JSON.stringify({
+            name: "master",
+            startPoint: "refs/heads/develop"
+          })
+        }
+      );
 
-    console.log("ГОТОВО: переименованы все 13 проектов.");
-  })().catch(error => console.error("ОШИБКА:", error));
+      console.log(
+        response.ok ? "CREATED" : "ERROR",
+        repo,
+        response.status,
+        await response.text()
+      );
+    }
+  })();
