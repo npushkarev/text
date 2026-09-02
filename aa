@@ -1,41 +1,15 @@
-(async () => {
-    const project = "SU2";
-    const repo = "qt_rest_api";
-    const url = `/rest/api/1.0/projects/${project}/repos`;
+ $work = Join-Path $env:TEMP ("qt_rest_api-" + [guid]::NewGuid())
 
-    const existing = await fetch(`${url}/${repo}`, {
-      credentials: "same-origin"
-    });
+  New-Item -ItemType Directory -Path $work | Out-Null
+  Push-Location $work
 
-    if (existing.ok) {
-      console.log(`Репозиторий ${project}/${repo} уже существует`);
-      return;
-    }
+  git init
+  git symbolic-ref HEAD refs/heads/develop
+  git -c user.name="SU2 initializer" `
+      -c user.email="su2@elara.local" `
+      commit --allow-empty -m "Initial commit"
 
-    if (existing.status !== 404) {
-      throw new Error(`${existing.status}: ${await existing.text()}`);
-    }
+  git remote add origin "http://bitbucket.inc.elara.local/scm/su2/qt_rest_api.git"
+  git push origin HEAD:refs/heads/develop HEAD:refs/heads/master
 
-    const response = await fetch(url, {
-      method: "POST",
-      credentials: "same-origin",
-      headers: {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "X-Atlassian-Token": "no-check"
-      },
-      body: JSON.stringify({
-        name: repo,
-        scmId: "git",
-        forkable: true
-      })
-    });
-
-    const body = await response.text();
-
-    if (!response.ok) {
-      throw new Error(`${response.status}: ${body}`);
-    }
-
-    console.log(`Создан ${project}/${repo}`, response.status);
-  })();
+  Pop-Location
