@@ -1,7 +1,26 @@
-(async()=>{for(const repo of
-  ["as_system_data","el_conf_chart_data_manager","el_conf_config_builder","el_conf_device_config_manager","el_conf_core_sdk",
-  "el_conf_gui_sdk","el_conf_themes","el_conf_utils","el_conf_elecont_protocol_client","el_conf_plugin_sdk","el_conf_sura_con
-  nector_client","el_conf_chart_ui_plugin","as_app"]){const r=await fetch("/rest/branch-utils/1.0/projects/SU2/
-  repos/"+repo+"/branches",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json","X-Atlassian-
-  Token":"no-check"},body:JSON.stringify({name:"master",startPoint:"refs/heads/
-  develop"})});console.log(r.ok?"CREATED":"ERROR",repo,r.status,await r.text())}})()
+ Первая:
+
+  var R = [
+  "as_system_data",
+  "el_conf_chart_data_manager",
+  "el_conf_config_builder",
+  "el_conf_device_config_manager",
+  "el_conf_core_sdk",
+  "el_conf_gui_sdk",
+  "el_conf_themes",
+  "el_conf_utils",
+  "el_conf_elecont_protocol_client",
+  "el_conf_plugin_sdk",
+  "el_conf_sura_connector_client",
+  "el_conf_chart_ui_plugin",
+  "as_app"
+  ]
+
+  Вторая:
+
+  var U="/rest/branch-utils/1.0/projects/SU2/repos/",B='{"name":"master","startPoint":"refs/heads/develop"}'
+
+  Третья:
+
+  R.forEach(function(r){fetch(U+r+"/branches",{method:"POST",headers:{"Content-Type":"application/
+  json"},body:B}).then(function(x){console.log(r,x.status)})})
