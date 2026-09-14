@@ -1,4 +1,6 @@
-   project in (CS, SUR, IDE, "Functional tests", HMI, "SURA 3", EliGate, Elicont-PLC, AS, CONF, EL300, ELCS) AND labels = doc ORDER BY Rank ASC
+curl -i --noproxy '*' -m 8 http://127.0.0.1:8624/health       
+
+project in (CS, SUR, IDE, "Functional tests", HMI, "SURA 3", EliGate, Elicont-PLC, AS, CONF, EL300, ELCS) AND labels = doc ORDER BY Rank ASC
 
 <add key="Conan" value="http://proget.inc.elara.local/nuget/Conan/" allowInsecureConnections="true" />
 
