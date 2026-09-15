@@ -1,9 +1,4 @@
-     for k in 'proget.health[serviceStatus]' 'proget.health[databaseStatus]' 'proget.health[licenseStatus]'                            
-   'proget.health[versionNumber]' proget.health.rtt; do                                                                                
-       printf '%-38s ' "$k"; zabbix_get -s 127.0.0.1 -k "$k"                                                                           
-     done 
-
-cat > /etc/zabbix/scripts/proget_health.sh <<'EOF'                                                                                
+     cat > /etc/zabbix/scripts/proget_health.sh <<'EOF'                                                                                
      #!/bin/sh                                                                                                                         
      # proget_health.sh <поле|raw|rtt> — ProGet 26: /health = plain text "OK"                                                          
      url="http://127.0.0.1:8624/health"                                                                                                
@@ -24,11 +19,12 @@ cat > /etc/zabbix/scripts/proget_health.sh <<'EOF'
              alive && echo OK || echo UNKNOWN                                                                                          
              ;;                                                                                                                        
          versionNumber)                                                                                                                
-             curl -s -D - -o /dev/null --noproxy '*' -m 8 "$url" 2>/dev/null \                                                         
-                 | tr -d '\r' | sed -n 's/^X-ProGet-Version:[[:space:]]*//Ip' | head -1                                                
+             hdr=$(curl -s -D - -o /dev/null --noproxy '*' -m 8 "$url" 2>/dev/null)                                                    
+             printf '%s' "$hdr" | tr -d '\r' | sed -n 's/^X-ProGet-Version:[[:space:]]*//Ip' | head -1                                 
              ;;                                                                                                                        
          databaseStatus)                                                                                                               
-             h=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$db" 2>/dev/null) || h=missing   
+             fmt='{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}'                                                     
+             h=$(docker inspect -f "$fmt" "$db" 2>/dev/null) || h=missing                                                              
              [ "$h" = "healthy" ] && echo OK || echo "${h:-missing}"                                                                   
              ;;                                                                                                                        
          *)                                                                                                                            
