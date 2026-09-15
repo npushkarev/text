@@ -1,3 +1,8 @@
+ for p in /api/health /health/detailed /status /api/status /healthz /api/v1/health; do                                             
+       code=$(curl -s --noproxy '*' -m 8 -o /tmp/h -w '%{http_code}' "http://127.0.0.1:8624$p")                                        
+       echo "== $p -> $code ($(wc -c </tmp/h) байт)"; head -c 300 /tmp/h; echo                                                         
+     done 
+
 curl -i --noproxy '*' -m 8 http://127.0.0.1:8624/health       
 
 project in (CS, SUR, IDE, "Functional tests", HMI, "SURA 3", EliGate, Elicont-PLC, AS, CONF, EL300, ELCS) AND labels = doc ORDER BY Rank ASC
