@@ -1,3 +1,8 @@
+     for k in 'proget.health[serviceStatus]' 'proget.health[databaseStatus]' 'proget.health[licenseStatus]'                            
+   'proget.health[versionNumber]' proget.health.rtt; do                                                                                
+       printf '%-38s ' "$k"; zabbix_get -s 127.0.0.1 -k "$k"                                                                           
+     done 
+
 cat > /etc/zabbix/scripts/proget_health.sh <<'EOF'                                                                                
      #!/bin/sh                                                                                                                         
      # proget_health.sh <поле|raw|rtt> — ProGet 26: /health = plain text "OK"                                                          
