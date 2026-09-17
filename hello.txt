@@ -1,4 +1,14 @@
- for p in /api/health /health/detailed /status /api/status /healthz /api/v1/health; do                                             
+    foreach(_dep ${${project_name}_dependencies})                                                                                     
+         string(REPLACE ":" ";" _dep "${_dep}")                                                                                        
+         list(GET _dep 0 _dep_name)                                                                                                    
+         if(DEFINED ${_dep_name}_INCLUDE_DIRS AND NOT TARGET ${_dep_name})                                                             
+             add_library(${_dep_name} INTERFACE IMPORTED GLOBAL)                                                                       
+             set_target_properties(${_dep_name} PROPERTIES                                                                             
+                 INTERFACE_INCLUDE_DIRECTORIES "${${_dep_name}_INCLUDE_DIRS}")                                                         
+         endif()                                                                                                                       
+     endforeach()
+
+for p in /api/health /health/detailed /status /api/status /healthz /api/v1/health; do                                             
        code=$(curl -s --noproxy '*' -m 8 -o /tmp/h -w '%{http_code}' "http://127.0.0.1:8624$p")                                        
        echo "== $p -> $code ($(wc -c </tmp/h) байт)"; head -c 300 /tmp/h; echo                                                         
      done 
