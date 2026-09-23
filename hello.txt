@@ -1,4 +1,6 @@
-    foreach(_dep ${${project_name}_dependencies})                                                                                     
+git clone http://bitbucket.inc.elara.local/scm/SU2/plcsoftcfg.git && cd plcsoftcfg && git push origin master:develop
+
+foreach(_dep ${${project_name}_dependencies})                                                                                     
          string(REPLACE ":" ";" _dep "${_dep}")                                                                                        
          list(GET _dep 0 _dep_name)                                                                                                    
          if(DEFINED ${_dep_name}_INCLUDE_DIRS AND NOT TARGET ${_dep_name})                                                             
