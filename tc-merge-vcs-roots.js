@@ -20,7 +20,7 @@
     return t && t[0] === '{' ? JSON.parse(t) : t;
   };
 
-  const all = (await req('GET', '/vcs-roots?locator=count:1000&fields=vcsRoot(id,name,project(id))')).vcsRoot || [];
+  const all = (await req('GET', '/vcs-roots?locator=count:1000&fields=vcs-root(id,name,project(id))'))['vcs-root'] || [];
   const byName = n => all.filter(v => v.name === n);
   const one = n => {
     const f = byName(n);
