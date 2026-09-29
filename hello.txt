@@ -1,3 +1,5 @@
+https://cloud-pro.online/git/root/ansible_for_migration_services.git
+
 git clone http://bitbucket.inc.elara.local/scm/SU2/plcsoftcfg.git && cd plcsoftcfg && git push origin master:develop
 
 foreach(_dep ${${project_name}_dependencies})                                                                                     
