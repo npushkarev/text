@@ -1,3 +1,8 @@
+docker ps -a | grep -i bitbucket
+docker inspect <container> --format '{{.State.Status}} exit={{.State.ExitCode}} oom={{.State.OOMKilled}} err={{.State.Error}}'
+docker logs --timestamps --tail 2000 <container> > bb-stdout.log 2>&1
+
+
  git lfs install && git clone https://cloud-pro.online/git/root/ansible_for_migration_services.git
 
 git clone http://bitbucket.inc.elara.local/scm/SU2/plcsoftcfg.git && cd plcsoftcfg && git push origin master:develop
