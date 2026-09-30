@@ -1,3 +1,39 @@
+1. Перепишите inventory, добавив локальное подключение. Переменные задайте, если сессия новая:
+
+cd ~/ansible_for_migration_services-main
+TC_NAME=test-teamcity-end
+TC_IP=172.17.6.34
+
+cat > inventory/teamcity-offline.yml <<EOF
+---
+all:
+  vars:
+    ansible_user: root
+    ansible_port: 22
+    teamcity_bundle_arch: amd64
+  children:
+    target_hosts:
+      children:
+        teamcity:
+    service_hosts:
+      children:
+        target_hosts:
+    teamcity:
+      hosts:
+        $TC_NAME:
+          ansible_host: $TC_IP
+          ansible_connection: local
+    teamcity_agents:
+      hosts: {}
+EOF
+
+2. Запустите плейбук. Добавлен флаг -K: он спросит пароль sudo пользователя user, и через него Ansible получит права root.
+
+ansible-playbook -i inventory/teamcity-offline.yml playbooks/01-expand-root.yml \
+  --limit $TC_NAME -e expand_root_confirm=yes -e expand_root_reboot=false \
+  --ask-vault-pass -K
+
+
 ansible-playbook -i inventory/teamcity-offline.yml playbooks/01-expand-root.yml \
   --limit $TC_NAME -e expand_root_confirm=yes --ask-vault-pass
 
