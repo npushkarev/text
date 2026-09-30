@@ -1,3 +1,7 @@
+ansible-playbook -i inventory/teamcity-offline.yml playbooks/01-expand-root.yml \
+  --limit $TC_NAME -e expand_root_confirm=yes --ask-vault-pass
+
+
 sed -n '51p' /etc/ssh/ssh_config                                           # увидите строку PermitRootLogin ...
 sudo sed -i -E 's/^[[:space:]]*PermitRootLogin/# &/I' /etc/ssh/ssh_config   # закомментировать её
 ssh -G 127.0.0.1 >/dev/null && echo "ssh-клиент в порядке"
