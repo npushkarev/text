@@ -1,3 +1,40 @@
+[ -f ~/.ssh/id_ed25519 ] || ssh-keygen -t ed25519 -N '' -f ~/.ssh/id_ed25519
+ssh-copy-id $SSH_USER@$TC_IP                       # один раз введёте пароль пользователя
+ssh -t $SSH_USER@$TC_IP 'sudo mkdir -p /root/.ssh && sudo cp ~/.ssh/authorized_keys /root/.ssh/ && sudo chmod 700 /root/.ssh && sudo chmod 600 /root/.ssh/authorized_keys'
+ssh root@$TC_IP 'uname -m; python3 --version'      # должно быть x86_64 и Python 3.x, без пароля
+
+Шаг 4. Описать ВМ для Ansible
+
+cat > inventory/teamcity-offline.yml <<EOF
+---
+all:
+  vars:
+    ansible_user: root
+    ansible_port: 22
+    teamcity_bundle_arch: amd64
+  children:
+    target_hosts:
+      children:
+        teamcity:
+    service_hosts:
+      children:
+        target_hosts:
+    teamcity:
+      hosts:
+        $TC_NAME:
+          ansible_host: $TC_IP
+    teamcity_agents:
+      hosts: {}
+EOF
+
+mkdir -p inventory/host_vars/$TC_NAME
+cat > inventory/host_vars/$TC_NAME/vars.yml <<EOF
+teamcity_bind_address: $TC_IP
+teamcity_local_agent_count: 1
+EOF
+
+
+
 docker ps -a | grep -i bitbucket
 docker inspect <container> --format '{{.State.Status}} exit={{.State.ExitCode}} oom={{.State.OOMKilled}} err={{.State.Error}}'
 docker logs --timestamps --tail 2000 <container> > bb-stdout.log 2>&1
