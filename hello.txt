@@ -1,3 +1,7 @@
+scp .\teamcity-install.sh user@172.17.6.6:~/ansible_for_migration_services-main/scripts/
+scp .\31-docker-offline.yml user@172.17.6.6:~/ansible_for_migration_services-main/playbooks/
+
+
 1. Перепишите inventory, добавив локальное подключение. Переменные задайте, если сессия новая:
 
 cd ~/ansible_for_migration_services-main
