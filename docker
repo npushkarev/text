@@ -3,3 +3,38 @@ sudo docker exec "$(sudo docker compose ps -q server)" ls -l /opt/teamcity/webap
 
 sudo docker tag teamcity-server-2026.2-unlimited:amd64 teamcity-server-2026.2-unlimited:latest
 cd /opt/teamcity-2026 && sudo docker compose up -d --pull never --no-build --force-recreate server
+
+
+cd /opt/teamcity-2026
+
+sudo python3 - <<'PY'
+import json
+import os
+import shutil
+import subprocess
+import tempfile
+import time
+from pathlib import Path
+
+image = "teamcity-server-2026.2-unlimited:amd64"
+subprocess.run(["docker", "image", "inspect", image],
+               check=True, stdout=subprocess.DEVNULL)
+
+p = Path("compose.override.yaml")
+config = json.loads(p.read_text())
+backup = p.with_name(p.name + ".before-image-" + str(time.time_ns()))
+shutil.copy2(p, backup)
+
+config["services"]["server"]["image"] = image
+with tempfile.NamedTemporaryFile(
+    mode="w", dir=".", prefix=".compose-image-", delete=False
+) as f:
+    json.dump(config, f, indent=2)
+    f.write("\n")
+    temporary = f.name
+os.replace(temporary, p)
+
+print("Образ:", image)
+print("Копия прежнего override:", backup)
+print("Настройки восстановленных томов сохранены.")
+PY
