@@ -1,2 +1,5 @@
+sudo docker exec "$(sudo docker compose ps -q server)" ls -l /opt/teamcity/webapps/ROOT/WEB-INF/lib/server-core.jar
+# должно быть 12341727 байт
+
 sudo docker tag teamcity-server-2026.2-unlimited:amd64 teamcity-server-2026.2-unlimited:latest
 cd /opt/teamcity-2026 && sudo docker compose up -d --pull never --no-build --force-recreate server
