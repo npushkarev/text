@@ -1,3 +1,5 @@
+sudo docker compose logs server 2>&1 | grep "Super user authentication token" | tail -1
+
 (async () => {
     const API = "/app/rest/2018.1";
     const SOURCE_PATH = ["SURA2", "COMPONENTS", "CMAKE", "EL_CONF"];
