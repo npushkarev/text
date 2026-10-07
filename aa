@@ -1,3 +1,51 @@
+
+1. Создай пустой as_doc в браузере
+
+В Bitbucket открой СУРА2 → Create repository:
+- имя: as_doc;
+- без README и других начальных файлов.
+
+Если as_doc уже есть, новый создавать не нужно.
+
+2. Склонируй текущие исходники cs_doc
+
+cd /d "%USERPROFILE%\Downloads"
+git clone https://bitbucket.inc.elara.local/scm/su2/cs_doc.git as_doc_work
+cd as_doc_work
+
+Если каталог as_doc_work уже существует, используй другое новое имя. Не удаляй существующий каталог.
+
+3. Подключи назначение и проверь, что оно пустое
+
+git remote rename origin source
+git remote add origin https://bitbucket.inc.elara.local/scm/su2/as_doc.git
+git ls-remote --refs orig
+
+Последняя команда должна го не вывести. Если вывелассылки на ветки или теги, остановись: as_doc уже непустой.
+
+4. Создай начальный коммит без истории cs_doc
+
+git var GIT_AUTHOR_IDENT
+
+Если git сообщает, что автор не настроен, задай свои данные только для этой локальной копии:
+
+git config user.name "Тво
+git config user.email "Твой рабочий email"
+
+Затем:
+
+git checkout --orphan as-doc-initial
+git commit -m "Initial so
+
+Файлы уже находятся в индan. git add здесь не нужен.
+
+5. Отправь исходники в дв
+                                                                             git push --atomic origin masteras-doc-initial:refs/heads/develop                                            
+Получатся master и develop с одним начальным коммитом. Старая история cs_doc не отправится. Сам cs_doc
+
+В настройках as_doc выбер.
+
+
 sudo docker compose logs server 2>&1 | grep "Super user authentication token" | tail -1
 
 (async () => {
