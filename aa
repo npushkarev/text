@@ -1,3 +1,14 @@
+2. Распакуй агента заново в /opt/buildAgent2026 — подставь имя скачанного ZIP:
+sudo mkdir /opt/buildAgent2026
+sudo unzip -q ~/buildAgentFull.zip -d /opt/buildAgent2026
+sudo cp ~/conf/buildAgent.properties /opt/buildAgent2026/conf/
+sudo chown -R teamcity: /opt/buildAgent2026
+
+3. Сравни конфиги и запусти от teamcity. Сначала просмотр без изменений, потом само выполнение:
+sudo -u teamcity bash teamcity-agent-copy-settings.sh --check /opt/buildAgent /opt/buildAgent2026
+sudo -u teamcity bash teamcity-agent-copy-settings.sh /opt/buildAgent /opt/buildAgent2026
+С --check скрипт ничего не меняет — сфотографируй этот вывод, в нём будет вся разница конфигов. Второй запуск после подтверждения добавит недостающие параметры и запустит агента на Java 21 от teamcity.
+
 
 1. Создай пустой as_doc в браузере
 
