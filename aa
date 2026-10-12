@@ -1,7 +1,6 @@
-grep -rnE '^\s*(CustomLog|ErrorLog|TransferLog)\s+"?\|' /etc/httpd/
-tr '\0' ' ' < /proc/11325/cmdline; echo
-ls -l /proc/11326/fd | grep pipe
-
+ps -L -o wchan:30 -p 11326,11327,11328 | sort | uniq -c | sort -rn
+httpd -V | grep -i mpm
+tail -30 /var/log/httpd/error_log
 
 
 2. Распакуй агента заново в /opt/buildAgent2026 — подставь имя скачанного ZIP:
