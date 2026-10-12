@@ -1,5 +1,8 @@
-systemctl restart httpd || { pkill -9 httpd; systemctl start httpd; }
-curl -m5 -s http://localhost/t.txt; curl -m10 -s -o /dev/null -w ' %{http_code}\n' http://localhost/zabbix/
+systemctl status httpd | sed -n '3p;6,12p'          # Active since — должно быть сегодня 10:2x, новые PID
+env | grep -i proxy
+curl --noproxy '*' -m5 -sv http://127.0.0.1/t.txt 2>&1 | grep -E 'Connected|^< HTTP|timed out|refused|ok'
+ss -tn state syn-recv '( sport = :80 )' | head; ss -tn '( dport = :80 or sport = :80 )' | head
+iptables -S | grep -E 'DROP|REJECT' | head
 
 
 2. Распакуй агента заново в /opt/buildAgent2026 — подставь имя скачанного ZIP:
