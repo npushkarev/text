@@ -1,3 +1,5 @@
+powershell -ExecutionPolicy Bypass -File .\teamcity-agent-windows-migrate.ps1 -Check
+
 ss -tlnp 'sport = :9789'
 P=$(ss -tlnp 'sport = :9789' | grep -oP 'pid=\K\d+' | head -1); ps -o pid,lstart,cmd -p $P; rpm -qf $(readlink -f /proc/$P/exe); systemctl status $P | head -3
 
