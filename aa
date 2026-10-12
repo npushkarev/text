@@ -1,8 +1,7 @@
-dmesg -T | grep -iE 'conntrack|table full' | tail -5
-cat /proc/sys/net/netfilter/nf_conntrack_count /proc/sys/net/netfilter/nf_conntrack_max 2>/dev/null
-curl --noproxy '*' -m5 -sv http://127.0.0.1/t.txt 2>&1 | grep -E 'Connected|^< HTTP|timed out|refused'
-iptables -S | grep -vE '^-P' | head -30
-
+iptables -t nat -S | grep -v '^-P'; iptables -t mangle -S | grep -v '^-P'
+ss -tlnp | grep -v '127.0.0.53'
+(curl --noproxy '*' -m10 -s http://127.0.0.1/t.txt >/dev/null &); sleep 2; ss -tnp '( dport = :80 or sport = :80 )'
+tail -3 /var/log/httpd/access_log
 
 2. Распакуй агента заново в /opt/buildAgent2026 — подставь имя скачанного ZIP:
 sudo mkdir /opt/buildAgent2026
