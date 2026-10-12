@@ -1,4 +1,6 @@
-ss -ltn 'sport = :80'; ps -o pid,stat,wchan:30,etime -C httpd; ipcs -s | grep -c apache
+grep -rnE '^\s*(CustomLog|ErrorLog|TransferLog)\s+"?\|' /etc/httpd/
+tr '\0' ' ' < /proc/11325/cmdline; echo
+ls -l /proc/11326/fd | grep pipe
 
 
 
