@@ -1,6 +1,5 @@
-ps -L -o wchan:30 -p 11326,11327,11328 | sort | uniq -c | sort -rn
-httpd -V | grep -i mpm
-tail -30 /var/log/httpd/error_log
+systemctl restart httpd || { pkill -9 httpd; systemctl start httpd; }
+curl -m5 -s http://localhost/t.txt; curl -m10 -s -o /dev/null -w ' %{http_code}\n' http://localhost/zabbix/
 
 
 2. Распакуй агента заново в /opt/buildAgent2026 — подставь имя скачанного ZIP:
