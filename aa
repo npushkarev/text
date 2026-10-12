@@ -1,14 +1,4 @@
-# 1. Статика или PHP?
-echo ok > /var/www/html/t.txt; curl -m5 -s http://localhost/t.txt; echo " rc=$?"
-curl -m10 -s -o /dev/null -w '%{http_code}\n' http://localhost/zabbix/
-
-# 2. Какая СУБД и куда ходит фронт
-grep -E "DB\['(TYPE|SERVER|PORT)'\]" /etc/zabbix/web/zabbix.conf.php
-systemctl list-units --type=service | grep -iE 'maria|mysql|postgres'
-
-# 3. Диск
-df -h; df -i
-
+ss -ltn 'sport = :80'; ps -o pid,stat,wchan:30,etime -C httpd; ipcs -s | grep -c apache
 
 
 
