@@ -1,3 +1,4 @@
+powershell -ExecutionPolicy Bypass -File .\teamcity-agent-windows-migrate.ps1 -NewDir D:\BuildAgent2026
 powershell -ExecutionPolicy Bypass -File .\teamcity-agent-windows-migrate.ps1 -Check
 
 ss -tlnp 'sport = :9789'
