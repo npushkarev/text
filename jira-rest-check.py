@@ -19,9 +19,14 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
-def check(opener, base, path, auth):
-    url = base + "/rest/api/2/" + path
-    req = urllib.request.Request(url, headers={"Accept": "application/json"})
+def check(opener, base, path, auth, body=None):
+    url = base + "/rest/api/latest/" + path
+    headers = {"Accept": "application/json"}
+    data = None
+    if body is not None:
+        headers["Content-Type"] = "application/json"
+        data = json.dumps(body).encode()
+    req = urllib.request.Request(url, data=data, headers=headers, method="POST" if data else "GET")
     if auth:
         req.add_header("Authorization", auth)
     try:
@@ -31,7 +36,7 @@ def check(opener, base, path, auth):
         code, headers, body = error.code, error.headers, error.read(4096)
     except urllib.error.URLError as error:
         return {"path": path, "error": str(error.reason)}
-    result = {"path": path, "code": code}
+    result = {"path": ("POST " if data else "") + path, "code": code}
     for name in HEADERS:
         if headers.get(name):
             result[name] = headers.get(name)
@@ -40,9 +45,11 @@ def check(opener, base, path, auth):
         if isinstance(data, dict):
             if data.get("errorMessages"):
                 result["errors"] = "; ".join(data["errorMessages"])
-            for key in ("version", "baseUrl", "name", "key"):
+            for key in ("version", "baseUrl", "name", "key", "total"):
                 if key in data:
                     result[key] = data[key]
+            if data.get("issues"):
+                result["issue"] = data["issues"][0].get("key")
         elif isinstance(data, list):
             result["items"] = len(data)
     except ValueError:
@@ -74,16 +81,30 @@ def main():
 
     key = urllib.parse.quote(args.project, safe="")
     jql = urllib.parse.quote("project = %s" % args.project, safe="")
-    paths = ["serverInfo", "myself", "project/" + key, "project/" + key + "/versions",
-             "search?jql=%s&maxResults=1&fields=summary" % jql]
+    user = urllib.parse.quote(args.user or "jira-service", safe="")
+    # Те же адреса, что вызывает скрипт CHANGELOG в CP050.
+    checks = [("serverInfo", None), ("myself", None), ("project", None), ("project/" + key, None),
+              ("project/" + key + "/versions", None),
+              ("project/" + key + "/version?maxResults=1&startAt=0", None),
+              ("search?jql=%s&maxResults=1&fields=summary" % jql, None),
+              ("search", {"jql": "project = %s" % args.project, "startAt": 0, "maxResults": 1,
+                          "fields": ["id", "key"]}),
+              ("issue/createmeta", None),
+              ("user/search?username=" + user, None)]
 
     print("Jira:", base)
     print("Авторизация:", auth.split(" ", 1)[0] if auth else "нет (анонимно)")
     failed = False
-    for path in paths:
-        result = check(opener, base, path, auth)
+    issue = None
+    while checks:
+        path, body = checks.pop(0)
+        result = check(opener, base, path, auth, body)
         print(json.dumps(result, ensure_ascii=False))
         failed = failed or "error" in result or not 200 <= result.get("code", 0) < 300
+        if result.get("issue") and not issue:
+            issue = urllib.parse.quote(result["issue"], safe="")
+            checks += [("issue/" + issue, None), ("issue/" + issue + "/transitions", None),
+                       ("issue/" + issue + "/remotelink", None)]
     return 1 if failed else 0
 
 
