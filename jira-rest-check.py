@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Проверка Jira REST теми же запросами, что делает скрипт CHANGELOG в CP050 BUILD COUNTER."""
+"""python3 jira-rest-check.py --jira 'https://<адрес Jira>' --project 'CS' --user '<логин>'"""
 import argparse
 import base64
 import getpass
