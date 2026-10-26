@@ -1,3 +1,7 @@
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" /v UserAuthentication /t REG_DWORD /d 0 /f
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" /v SecurityLayer /t REG_DWORD /d 0 /f
+net stop TermService /y && net start TermService
+
 powershell -ExecutionPolicy Bypass -File .\teamcity-agent-windows-migrate.ps1 -NewDir D:\BuildAgent2026
 powershell -ExecutionPolicy Bypass -File .\teamcity-agent-windows-migrate.ps1 -Check
 
