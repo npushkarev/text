@@ -48,3 +48,14 @@ REPO=<путь_к_клону> PROGET_USER='<логин>' PROGET_PASSWORD='<па�
 
 На Astra не будет того, что добавляет TeamCity: build feature «NuGet feed credentials», `NUGET_PLUGIN_PATHS`, переменные агента.
 Если на Astra всё работает, сравните вывод шага «окружение» с параметрами сборки 475660 в TeamCity.
+
+## Как TeamCity, не от root
+
+TeamCity может запускать контейнер не от root и с другим `HOME`. Тогда конфиг `/root/.nuget/NuGet/NuGet.Config` из образа не виден.
+Проверка того же на Astra:
+
+```sh
+DOCKER_USER=1000:1000 ./in766-nuget-check.sh
+```
+
+Если шаг 3 падает, а шаг 5 проходит, причина в том, где лежит конфиг NuGet, а не в ProGet.

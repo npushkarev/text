@@ -2,6 +2,7 @@
 # Выполняется внутри контейнера dotnet. Вход: /src (этот каталог), /repo (необязательно), env FEED, NUGET_VERSION, PROGET_USER, PROGET_PASSWORD.
 set -u
 step() { echo; echo "######## $*"; }
+mkdir -p "$HOME" 2>/dev/null
 
 step "окружение"
 dotnet --version
@@ -50,8 +51,22 @@ cat > check.csproj <<XML
 XML
 cp /src/Program.cs .
 
-step "1. dotnet restore через CLI из источников образа (NuGet.Protocol $NUGET_VERSION, $TFM)"
-if ! dotnet restore --nologo -v minimal 2>&1; then
+# Источники для restore заданы явно, чтобы проверочное приложение собиралось при любом HOME и пользователе.
+P=http://proget.inc.elara.local/nuget
+cat > "$W/restore.config" <<XML
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources><clear />
+    <add key="Default" value="$P/Default/" allowInsecureConnections="true" />
+    <add key="Prerelease" value="$P/Prerelease/" allowInsecureConnections="true" />
+    <add key="Legacy" value="$P/Legacy/" allowInsecureConnections="true" />
+    <add key="External" value="$P/External/" allowInsecureConnections="true" />
+  </packageSources>
+</configuration>
+XML
+
+step "1. dotnet restore через CLI из фидов ProGet (NuGet.Protocol $NUGET_VERSION, $TFM)"
+if ! dotnet restore --nologo -v minimal --configfile "$W/restore.config" 2>&1; then
     echo "[ИТОГ] dotnet restore не нашёл NuGet.Protocol/NuGet.Commands $NUGET_VERSION в источниках образа."
     echo "       При NU1101 задайте версию, которая есть в ProGet, например ту, что в .csproj тестов: NUGET_VERSION=<версия>."
     exit 2

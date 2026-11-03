@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # IN-766: сравнить dotnet CLI и NuGet.Protocol в контейнере dotnet против ProGet.
-# Запуск: [REPO=<клон OpenIDE Backend>] [PROGET_USER=.. PROGET_PASSWORD=..] ./in766-nuget-check.sh
+# Запуск: [REPO=<клон OpenIDE Backend>] [PROGET_USER=.. PROGET_PASSWORD=..] [DOCKER_USER=1000:1000] ./in766-nuget-check.sh
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 IMAGE="${IMAGE:-proget.inc.elara.local/main/library/dotnet:0.5.0}"
@@ -20,7 +20,10 @@ if [ -n "$REPO" ]; then
     MOUNT+=(-v "$(cd "$REPO" && pwd):/repo:ro")
 fi
 echo "[INFO] образ $IMAGE, фид $FEED, NuGet $NUGET_VERSION${REPO:+, репозиторий $REPO}"
-docker run --rm "${MOUNT[@]}" \
+# DOCKER_USER: запуск не от root, как может делать TeamCity. HOME тогда /tmp/home.
+USER_ARGS=()
+[ -n "${DOCKER_USER:-}" ] && USER_ARGS=(--user "$DOCKER_USER" -e HOME=/tmp/home)
+docker run --rm "${MOUNT[@]}" ${USER_ARGS[@]+"${USER_ARGS[@]}"} \
     -e FEED="$FEED" -e NUGET_VERSION="$NUGET_VERSION" \
     -e PROGET_USER="${PROGET_USER:-}" -e PROGET_PASSWORD="${PROGET_PASSWORD:-}" \
     -e DOTNET_CLI_TELEMETRY_OPTOUT=1 -e DOTNET_NOLOGO=1 \
