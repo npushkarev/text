@@ -9,7 +9,7 @@ id; echo "HOME=$HOME"
 env | grep -iE 'proxy|nuget|dotnet_' | sed -E 's/((PASSWORD|TOKEN|CREDENTIALS)[^=]*=).*/\1***/I' | sort
 
 step "конфиги NuGet, которые видит LoadDefaultSettings(root: null)"
-for f in "$HOME/.nuget/NuGet/NuGet.Config" "$HOME/.nuget/NuGet/config/"*.config /etc/xdg/NuGet/NuGet.Config /etc/xdg/NuGet/config/*.config; do
+for f in "$HOME/.nuget/NuGet/NuGet.Config" "$HOME/.nuget/NuGet/config/"*.config /etc/opt/NuGet/Config/*.config ${NUGET_COMMON_APPLICATION_DATA:+$NUGET_COMMON_APPLICATION_DATA/NuGet/Config/*.config}; do
     [ -f "$f" ] && { echo "== $f"; grep -viE 'password' "$f"; }
 done
 echo "(строки с password скрыты)"
