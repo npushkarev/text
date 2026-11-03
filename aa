@@ -1,8 +1,7 @@
-sed -i 's/\r$//' *.sh README.md dist/kit.env dist/*.sha256 image/*.sh image/*.py image/*.txt
-chmod +x *.sh image/*.sh
-ls -l dist/                          # архивы 42 МБ и 37 МБ?
-cd dist && sha256sum -c *.sha256 && cd ..
-sudo usermod -aG docker $USER
+V=2.10.0-unstable-1b57a72-2147
+docker load -i cs_product-$V.tar
+docker tag library/cs_product:$V proget.inc.elara.local/main/library/cs_product:$V
+docker push proget.inc.elara.local/main/library/cs_product:$V
 
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.0\Client" /v Enabled /t REG_DWORD /d 1 /f
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.0\Client" /v DisabledByDefault /t REG_DWORD /d 0 /f
