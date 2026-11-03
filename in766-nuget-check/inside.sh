@@ -25,13 +25,14 @@ step "dotnet nuget list source (как видит CLI из $HOME)"
 (cd /tmp && dotnet nuget list source --format detailed 2>&1)
 [ -d /repo ] && { step "dotnet nuget list source из /repo"; (cd /repo && dotnet nuget list source --format detailed 2>&1); }
 
-W=/tmp/in766; rm -rf "$W"; mkdir -p "$W/app"; cd "$W/app"
+W=/tmp/in766; rm -rf "$W"; mkdir -p "$W/app" "$W/explicit"; cd "$W/app"
 TFM="net$(dotnet --version | cut -d. -f1).0"
 CREDS=""
 if [ -n "${PROGET_USER:-}" ]; then
     CREDS="<packageSourceCredentials><feed><add key=\"Username\" value=\"$PROGET_USER\" /><add key=\"ClearTextPassword\" value=\"$PROGET_PASSWORD\" /></feed></packageSourceCredentials>"
 fi
-cat > nuget.config <<XML
+# Только для шага 5. Проверочное приложение restore берёт из источников образа, как обычная сборка.
+cat > "$W/explicit/nuget.config" <<XML
 <?xml version="1.0" encoding="utf-8"?>
 <configuration>
   <packageSources><clear /><add key="feed" value="$FEED" allowInsecureConnections="true" /></packageSources>
@@ -49,10 +50,10 @@ cat > check.csproj <<XML
 XML
 cp /src/Program.cs .
 
-step "1. dotnet restore через CLI, фид $FEED (NuGet.Protocol $NUGET_VERSION, $TFM)"
+step "1. dotnet restore через CLI из источников образа (NuGet.Protocol $NUGET_VERSION, $TFM)"
 if ! dotnet restore --nologo -v minimal 2>&1; then
-    echo "[ИТОГ] dotnet restore не смог взять пакеты из $FEED. Сам CLI тоже не работает с этим адресом."
-    echo "       Проверьте FEED (V3: .../nuget/<фид>/v3/index.json), учётку PROGET_USER/PROGET_PASSWORD, NUGET_VERSION."
+    echo "[ИТОГ] dotnet restore не нашёл NuGet.Protocol/NuGet.Commands $NUGET_VERSION в источниках образа."
+    echo "       При NU1101 задайте версию, которая есть в ProGet, например ту, что в .csproj тестов: NUGET_VERSION=<версия>."
     exit 2
 fi
 dotnet build --nologo -v quiet -c Release -o "$W/bin" > "$W/build.log" 2>&1 \
@@ -67,7 +68,7 @@ $RUN plain -; r_plain=$?
 step "4. NuGet.Protocol, root=null + DefaultCredentialServiceUtility (провайдеры учёток, как у CLI)"
 $RUN creds -; r_creds=$?
 step "5. NuGet.Protocol, явный конфиг с фидом $FEED"
-$RUN plain "$W/app"; r_explicit=$?
+$RUN plain "$W/explicit"; r_explicit=$?
 r_repo=-
 if [ -d /repo ]; then
     step "6. NuGet.Protocol, root=/repo (конфиг из репозитория)"

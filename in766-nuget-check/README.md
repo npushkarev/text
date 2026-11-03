@@ -36,7 +36,7 @@ REPO=<путь_к_клону> PROGET_USER='<логин>' PROGET_PASSWORD='<па�
 
 ## Что проверяется
 
-1. `dotnet restore` проверочного приложения с фидом `FEED`.
+1. `dotnet restore` проверочного приложения из источников образа.
 2. Прямой HTTP-запрос к `FEED` и какой прокси для него выбирает .NET.
 3. Код из IN-766 как есть: `root: null`.
 4. То же плюс `DefaultCredentialServiceUtility.SetupDefaultCredentialService`, как делает CLI.
