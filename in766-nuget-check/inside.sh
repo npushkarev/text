@@ -34,7 +34,7 @@ fi
 cat > nuget.config <<XML
 <?xml version="1.0" encoding="utf-8"?>
 <configuration>
-  <packageSources><clear /><add key="feed" value="$FEED" /></packageSources>
+  <packageSources><clear /><add key="feed" value="$FEED" allowInsecureConnections="true" /></packageSources>
   $CREDS
 </configuration>
 XML
