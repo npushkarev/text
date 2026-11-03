@@ -1,3 +1,8 @@
+echo '{ "scan-on-image-create": false, "scan-on-container-start": false }' | sudo tee /etc/docker/daemon.json
+sudo systemctl reset-failed docker
+sudo systemctl restart docker
+systemctl is-active docker
+
 V=2.10.0-unstable-1b57a72-2147
 docker load -i cs_product-$V.tar
 docker tag library/cs_product:$V proget.inc.elara.local/main/library/cs_product:$V
