@@ -1,3 +1,19 @@
+
+# по имени теста (то же, что pytest -k)
+PYTEST_K="test_channels" CS_PORTS=8080 CS_TAG=<тег> ./run.sh ..
+
+# несколько тестов по имени
+PYTEST_K="test_ip or test_channels" CS_PORTS=8080 CS_TAG=<тег> ./run.sh ..
+
+# конкретный файл (PYTEST_K= пустой, иначе останется фильтр test_ip)
+PYTEST_K= PYTEST_ARGS="tests/test_xxx.py" CS_PORTS=8080 CS_TAG=<тег> ./run.sh ..
+
+# одна функция в файле
+PYTEST_K= PYTEST_ARGS="tests/test_xxx.py::test_yyy" CS_PORTS=8080 CS_TAG=<тег> ./run.sh ..
+
+# все тесты
+PYTEST_K= CS_PORTS=8080 CS_TAG=<тег> ./run.sh ..
+
 echo '{ "scan-on-image-create": false, "scan-on-container-start": false }' | sudo tee /etc/docker/daemon.json
 sudo systemctl reset-failed docker
 sudo systemctl restart docker
