@@ -1,3 +1,5 @@
+bash scripts/sync-teamcity-base-image.sh %env.VERSION% %env.ARCH%
+
 env.ARCH=amd64
 env.VERSION=2026.2
 env.IMAGE_NAME=teamcity-server
