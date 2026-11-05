@@ -1,3 +1,6 @@
+env.REGISTRY=proget-new.inc.elara.local/main
+env.BASE_IMAGE=proget-new.inc.elara.local/main/teamcity-server:2026.2
+env.PULL_BASE=1
 
 # по имени теста (то же, что pytest -k)
 PYTEST_K="test_channels" CS_PORTS=8080 CS_TAG=<тег> ./run.sh ..
