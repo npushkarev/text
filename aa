@@ -1,3 +1,12 @@
+docker pull postgres:16-alpine
+docker tag postgres:16-alpine \
+  proget.inc.elara.local/main/library/postgres:16-alpine
+
+docker login proget.inc.elara.local
+docker push proget.inc.elara.local/main/library/postgres:16-alpine
+docker logout proget.inc.elara.local
+
+
 bash scripts/sync-teamcity-base-image.sh %env.VERSION% %env.ARCH%
 
 env.ARCH=amd64
