@@ -1,3 +1,11 @@
+H=deb-13-test-teamcity.inc.elara.local
+
+ansible-playbook playbooks/00-bootstrap-keys.yml --limit $H --ask-pass --ask-vault-pass
+# snapshot ВМ в vSphere
+ansible-playbook playbooks/01-expand-root.yml --limit $H -e expand_root_confirm=yes
+ansible-playbook playbooks/53-teamcity-proget.yml --limit $H --ask-vault-pass
+
+
 docker pull postgres:16-alpine
 docker tag postgres:16-alpine \
   proget.inc.elara.local/main/library/postgres:16-alpine
