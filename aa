@@ -1,3 +1,5 @@
+H=deb-13-test-teamcity.inc.elara.local
+ansible-playbook playbooks/50-teamcity-migrate.yml --limit $H --ask-vault-pass
 
 cp inventory/vault.example.yml inventory/vault.yml
 openssl rand -hex 24          # скопируй результат — это пароль PostgreSQL
