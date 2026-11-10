@@ -1,3 +1,26 @@
+
+cp inventory/vault.example.yml inventory/vault.yml
+openssl rand -hex 24          # скопируй результат — это пароль PostgreSQL
+nano inventory/vault.yml
+
+Заполни три строки:
+
+vault_teamcity_db_password: "<результат openssl>"
+vault_proget_registry_user: "<логин ProGet>"
+vault_proget_registry_password: "<пароль или API-ключ ProGet>"
+
+Зашифруй файл и придумай пароль Vault:
+
+ansible-vault encrypt inventory/vault.yml
+
+Запуск:
+
+H=deb-13-test-teamcity.inc.elara.local
+ansible-playbook playbooks/53-teamcity-proget.yml --limit $H --ask-vault-pass
+
+
+
+
 H=deb-13-test-teamcity.inc.elara.local
 
 ansible-playbook playbooks/00-bootstrap-keys.yml --limit $H --ask-pass --ask-vault-pass
