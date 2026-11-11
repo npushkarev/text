@@ -1,3 +1,5 @@
+hf_KgjfOiKxiAokrWbHjNXWnxfCcCIPicEZ
+
 H=deb-13-test-teamcity.inc.elara.local
 ansible-playbook playbooks/50-teamcity-migrate.yml --limit $H --ask-vault-pass
 
