@@ -1,4 +1,29 @@
-hf_KgjfOiKxiAokrWbHjNXWnxfCcCIPicEZ
+Плейбуки 03/04/05 не работают. Проверено по исходникам community.vmware.
+Исправь:
+1) Все vmware_guest_info: убери properties (или добавь schema: vsphere)
+   и используй поля summary: instance.hw_name, instance.hw_power_status,
+   instance.moid. Диски бери через vmware_guest_disk_info.
+2) Покажи вывод ansible-galaxy collection list community.vmware.
+   В requirements.yml закрепи версию <7.0.0: в 7.0 удалён vmware_guest_powerstate.
+3) 04: модуля vmware_guest_clone нет. Сделай через community.vmware.vmware_guest
+   (template: <источник>, state: poweredoff), сеть клона с
+   connected: false и start_connected: false.
+4) 05:
+   - старая ВМ по moid vm-197626, имя не использовать;
+   - в обеих задачах vmware_guest_network ОБЯЗАТЕЛЬНО mac_address и
+     network_name: старая 00:0c:29:83:63:53, новая 00:50:56:ba:32:b3.
+     Без MAC модуль добавляет новую сетевую карту, а не правит существующую;
+   - connected/start_connected: у старой = (cutover_mode == 'rollback'),
+     у новой = (cutover_mode == 'on'). Сейчас rollback делает обратное;
+   - задачу для новой ВМ поставь ПЕРЕД задачей для старой, чтобы при откате
+     новая уходила из сети раньше, чем возвращается старая;
+   - в конце перечитай состояние сетевых карт и проверь его через assert.
+5) Перед любым реальным запуском прогони каждый плейбук против vCenter с --check
+   и пришли вывод.
+
+Когда пришлёшь исправленный 05 и вывод --check, проверю его. Отдельно прочитаю ещё Docker-часть 02.
+
+
 
 H=deb-13-test-teamcity.inc.elara.local
 ansible-playbook playbooks/50-teamcity-migrate.yml --limit $H --ask-vault-pass
