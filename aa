@@ -1,3 +1,9 @@
+dotCover-покрытие в шаге Test Debug (Docker) шаблона DOTNETCORE3 260 я отключаю сам через UI.
+Ты ничего не меняй. Сделай только:
+1. Выпиши из system/caches/tools/installedToolsState.xml все инструменты со статусом INSTALLATION_FAILED: tool-id, версия, URL для скачивания.
+2. Выполни grep по config/projects (Maven2, dotnet-tools-inspectcode/dupfinder, teamcity.tool.*) и покажи, какие конфигурации используют эти инструменты.
+Пришли одну таблицу
+
 Причину принял. Ничего не меняй. Проверь только:
 1. GET /app/rest/tools — какие версии JetBrains.dotCover.CommandLineTools установлены и какая default (или посмотри в Administration → Tools).
 2. На старом сервере (снапшот или старый datadir) — какие dotCover были в plugins/.tools и какая версия была default.
