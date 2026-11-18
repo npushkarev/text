@@ -1,4 +1,17 @@
- 05 верни условия when на задачи сетевых карт:
+После миграции сборки с Docker-шагами на Linux-агентах падают на
+"Docker wrapper: restore directory ownership": агент работает не под root
+и пытается взять busybox:latest с Docker Hub, а Docker Hub недоступен.
+1. На одном агенте выполни: docker pull proget.inc.elara.local/main/library/busybox:latest.
+   Если не скачивается — доложи, ничего не меняй.
+2. Добавь в Root project конфигурационный параметр
+   teamcity.internal.docker.busybox = proget.inc.elara.local/main/library/busybox:latest
+3. На всех Linux-агентах *-2026 выполни chown -R на пользователя агента
+   для /data/work /data/temp /data/system и /opt/buildAgent2026/{work,temp,system} (только существующие каталоги).
+4. Перезапусти SR501 CleanUp Docker Cache на одном агенте и пришли результат шага restore directory ownership.
+Не отключай teamcity.docker.chown.enabled и не переводи агентов на root.
+
+
+05 верни условия when на задачи сетевых карт:
   новая ВМ:  when: cutover_mode in ['on', 'rollback']
   старая ВМ: when: cutover_mode in ['off', 'rollback']
 Формулы connected оставь как есть. В режиме off новая ВМ должна
