@@ -1,3 +1,16 @@
+Одна неточность в её выводах: busybox не захардкожен. Образ задаётся параметром teamcity.internal.docker.busybox, и её же план этот параметр использует, так что на результат это не влияет.
+
+Ответ нейронке (можно вставить как есть)
+
+Да, пушь — с поправками:
+1. На ba-deb12-01 команды выполняй по ssh, не через ansible (Jinja съест фигурные скобки).
+   До push пришли вывод: docker image inspect busybox:latest | grep -A2 RepoDigests
+2. Версию возьми из: docker run --rm busybox:latest busybox | head -1
+   Тегни и запушь две метки: proget.inc.elara.local/main/library/busybox:<версия> и :latest.
+3. Сразу после push: docker logout proget.inc.elara.local на ba-deb12-01.
+4. В параметре Root-проекта teamcity.internal.docker.busybox укажи тег с версией, не latest.
+5. SR501 и его prune не меняй.
+
 После миграции сборки с Docker-шагами на Linux-агентах падают на
 "Docker wrapper: restore directory ownership": агент работает не под root
 и пытается взять busybox:latest с Docker Hub, а Docker Hub недоступен.
