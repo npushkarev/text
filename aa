@@ -1,3 +1,5 @@
+https://www.nuget.org/api/v2/package/JetBrains.dotCover.CommandLineTools/2025.1.7
+
 dotCover-покрытие в шаге Test Debug (Docker) шаблона DOTNETCORE3 260 я отключаю сам через UI.
 Ты ничего не меняй. Сделай только:
 1. Выпиши из system/caches/tools/installedToolsState.xml все инструменты со статусом INSTALLATION_FAILED: tool-id, версия, URL для скачивания.
