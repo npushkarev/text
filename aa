@@ -1,61 +1,8 @@
-Сервер TeamCity в порядке. Эндпоинтов /queue и /user нет: очередь — /app/rest/buildQueue, пользователи — /app/rest/users.
-Задача одна: почему у ES260 BUILD Crossplatform Any CPU 0 совместимых агентов. Ничего не меняй, пришли таблицу:
-1. Для ba-deb12-01..08:
-   GET /app/rest/agents?locator=name:<имя>&fields=agent(name,enabled,authorized,connected,pool(name))
-2. Пулы проекта SURA1: GET /app/rest/projects/id:Sura1/agentPools
-3. Причина для ba-deb12-07: GET /app/rest/agents/name:ba-deb12-07/incompatibleBuildTypes — найди там ES260.
-
-
-Сервер TeamCity в порядке. Эндпоинтов /queue и /user нет: очередь — /app/rest/buildQueue, пользователи — /app/rest/users.
-Задача одна: почему у ES260 BUILD Crossplatform Any CPU 0 совместимых агентов. Ничего не меняй, пришли таблицу:
-1. Для ba-deb12-01..08:
-   GET /app/rest/agents?locator=name:<имя>&fields=agent(name,enabled,authorized,connected,pool(name))
-2. Пулы проекта SURA1: GET /app/rest/projects/id:Sura1/agentPools
-3. Причина для ba-deb12-07: GET /app/rest/agents/name:ba-deb12-07/incompatibleBuildTypes — найди там ES260.
-
-ES260 и всё на шаблоне DOTNETCORE3 260 требуют system.agent.version=2 и system.agent.type=build-linux.
-На ba-deb12-01..08 вчера 60 упал на копировании настроек. На каждом ba-deb12:
-1. Покажи system.*-строки старого и нового buildAgent.properties и разницу между ними.
-2. Перезапусти teamcity-agent-copy-settings.sh для этого агента вручную; если упадёт — пришли точный текст ошибки.
-3. После копирования перезапусти агента и проверь в TeamCity, что у него есть agent.version=2.
-Начни с ba-deb12-07
-
-
-Одна неточность в её выводах: busybox не захардкожен. Образ задаётся параметром teamcity.internal.docker.busybox, и её же план этот параметр использует, так что на результат это не влияет.
-
-Ответ нейронке (можно вставить как есть)
-
-Да, пушь — с поправками:
-1. На ba-deb12-01 команды выполняй по ssh, не через ansible (Jinja съест фигурные скобки).
-   До push пришли вывод: docker image inspect busybox:latest | grep -A2 RepoDigests
-2. Версию возьми из: docker run --rm busybox:latest busybox | head -1
-   Тегни и запушь две метки: proget.inc.elara.local/main/library/busybox:<версия> и :latest.
-3. Сразу после push: docker logout proget.inc.elara.local на ba-deb12-01.
-4. В параметре Root-проекта teamcity.internal.docker.busybox укажи тег с версией, не latest.
-5. SR501 и его prune не меняй.
-
-После миграции сборки с Docker-шагами на Linux-агентах падают на
-"Docker wrapper: restore directory ownership": агент работает не под root
-и пытается взять busybox:latest с Docker Hub, а Docker Hub недоступен.
-1. На одном агенте выполни: docker pull proget.inc.elara.local/main/library/busybox:latest.
-   Если не скачивается — доложи, ничего не меняй.
-2. Добавь в Root project конфигурационный параметр
-   teamcity.internal.docker.busybox = proget.inc.elara.local/main/library/busybox:latest
-3. На всех Linux-агентах *-2026 выполни chown -R на пользователя агента
-   для /data/work /data/temp /data/system и /opt/buildAgent2026/{work,temp,system} (только существующие каталоги).
-4. Перезапусти SR501 CleanUp Docker Cache на одном агенте и пришли результат шага restore directory ownership.
-Не отключай teamcity.docker.chown.enabled и не переводи агентов на root.
-
-
-05 верни условия when на задачи сетевых карт:
-  новая ВМ:  when: cutover_mode in ['on', 'rollback']
-  старая ВМ: when: cutover_mode in ['off', 'rollback']
-Формулы connected оставь как есть. В режиме off новая ВМ должна
-остаться в сети: шаги 4.5 и 4.7 идут по SSH на 172.17.5.69, IP
-меняется только на 4.8. Финальная проверка — только по ВМ, которых
-коснулся этот режим. Повтори --check для всех трёх режимов и покажи
-таблицу «режим → старая/новая»
-
+Причину принял. Ничего не меняй. Проверь только:
+1. GET /app/rest/tools — какие версии JetBrains.dotCover.CommandLineTools установлены и какая default (или посмотри в Administration → Tools).
+2. На старом сервере (снапшот или старый datadir) — какие dotCover были в plugins/.tools и какая версия была default.
+3. Есть ли у последней успешной ES260 на ba-deb12-07 статистика покрытия (вкладка Code Coverage / строки dotCover в логе).
+Пришли три коротких ответа.
 
 
 Плейбуки 03/04/05 не работают. Проверено по исходникам community.vmware.
