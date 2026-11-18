@@ -1,3 +1,10 @@
+Сервер TeamCity в порядке. Эндпоинтов /queue и /user нет: очередь — /app/rest/buildQueue, пользователи — /app/rest/users.
+Задача одна: почему у ES260 BUILD Crossplatform Any CPU 0 совместимых агентов. Ничего не меняй, пришли таблицу:
+1. Для ba-deb12-01..08:
+   GET /app/rest/agents?locator=name:<имя>&fields=agent(name,enabled,authorized,connected,pool(name))
+2. Пулы проекта SURA1: GET /app/rest/projects/id:Sura1/agentPools
+3. Причина для ba-deb12-07: GET /app/rest/agents/name:ba-deb12-07/incompatibleBuildTypes — найди там ES260.
+
 ES260 и всё на шаблоне DOTNETCORE3 260 требуют system.agent.version=2 и system.agent.type=build-linux.
 На ba-deb12-01..08 вчера 60 упал на копировании настроек. На каждом ba-deb12:
 1. Покажи system.*-строки старого и нового buildAgent.properties и разницу между ними.
